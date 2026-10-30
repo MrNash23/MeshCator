@@ -1,0 +1,23 @@
+.pio/
+build/
+.cache/
+.DS_Store
+*.bin
+*.elf
+*.o
+*.a
+*.d
+
+# Local device backups can contain identity keys
+backups/
+
+# Local simulator message archives
+*.messages.tsv
+
+# Local simulator settings and private message history
+meshcator-settings.txt
+*.history
+*.history.bak
+*.history.tmp
+__pycache__/
+*.pyc

@@ -1,0 +1,25 @@
+{
+  "version": "0.1.0-dev",
+  "board": "LilyGo T-LoRa Pager SX1262",
+  "firmware_sha256": "59c60add7754abc0a4ef14d9b28e411d6a8063f9132f4e18a72a966f800ac9a6",
+  "app_binary_bytes": 1583008,
+  "static_ram_bytes": 173560,
+  "flash_bytes": 1582593,
+  "psram_draw_buffers_bytes": 76800,
+  "tests_passed": 10,
+  "tests_total": 10,
+  "hardware_tested": true,
+  "flashed": true,
+  "environment": "meshcator-launcher",
+  "hardware_test_scope": "USB read-only queries: version, node settings, clock, battery/storage, statistics. Updated physical navigation awaiting user validation. BLE disabled.",
+  "ble_enabled": false,
+  "full_usb_maintenance_verified": false,
+  "update": "Four-page first-boot introduction, Help as last Settings row, persistent completion, uniform wheel-hold main menu",
+  "languages": [
+    "en",
+    "fr",
+    "es",
+    "de"
+  ],
+  "default_language": "en"
+}

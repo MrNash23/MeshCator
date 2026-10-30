@@ -1,0 +1,290 @@
+#include "core/App.h"
+#include "core/BackGesture.h"
+#include <cstdlib>
+#include <iostream>
+struct Fake : mc::Backend {
+  bool accept = true, saved = false, saveAccept = true;
+  int calls = 0, favoriteCalls = 0, pathCalls = 0;
+  std::string actionId;
+  bool toggleFavorite(const std::string &id) override { ++favoriteCalls; actionId = id; return accept; }
+  bool resetPath(const std::string &id) override { ++pathCalls; actionId = id; return accept; }
+  bool send(const mc::Chat &, const std::string &) override {
+    ++calls;
+    return accept;
+  }
+  bool advert(bool) override {
+    return accept;
+  }
+  bool saveSettings(const mc::Settings &) override {
+    saved = true;
+    return saveAccept;
+  }
+};
+#define CHECK(x)                                                                                   \
+  do {                                                                                             \
+    if (!(x)) {                                                                                    \
+      std::cerr << "FAIL " << __LINE__ << ": " << #x << '\n';                                      \
+      std::exit(1);                                                                                \
+    }                                                                                              \
+  } while (false)
+int main() {
+  CHECK(mc::validText("Grüße"));
+  CHECK(!mc::validText("   "));
+  CHECK(!mc::validText(std::string(151, 'x')));
+  CHECK(!mc::validText("\xC0\x80"));
+  CHECK(!mc::validText("\xED\xA0\x80"));
+  CHECK(!mc::validText("\xF4\x90\x80\x80"));
+  std::string s = "Hi 😀";
+  mc::eraseUtf8(s);
+  CHECK(s == "Hi ");
+  Fake b;
+  mc::App a(b);
+  a.settings.setupComplete=true;
+  a.screen=mc::Screen::Chats;
+  a.key(mc::Key::Next);
+  CHECK(a.selected == 0);
+  a.receive("one", "One", "Hallo", false);
+  CHECK(a.chats[0].unread == 1);
+  a.open(0);
+  CHECK(a.chats[0].unread == 0);
+  CHECK(a.type("Grüße"));
+  b.accept = false;
+  CHECK(!a.send());
+  CHECK(a.draft == "Grüße");
+  CHECK(a.messages.back().delivery == mc::Delivery::Failed);
+  b.accept = true;
+  CHECK(a.send());
+  CHECK(a.draft.empty());
+  CHECK(a.messages.back().delivery == mc::Delivery::Queued);
+  a.receive("one", "One", "Noch da?", false);
+  CHECK(a.chats[0].unread == 0);
+  for (size_t i = 0; i < mc::MaxMessages + 8; ++i)
+    a.receive("one", "One", "Test", false);
+  CHECK(a.messages.size() == mc::MaxMessages);
+  for (int i = 0; i < 100; ++i)
+    a.sample(-112);
+  CHECK(a.noise.size() == 60);
+  a.paused = true;
+  a.sample(-90);
+  CHECK(a.noise.back() == -112);
+  a.key(mc::Key::ThemeNext);
+  CHECK(b.saved);
+  a.key(mc::Key::Lock);
+  CHECK(a.screen == mc::Screen::Lock);
+  a.key(mc::Key::Mode);
+  CHECK(a.screen == mc::Screen::Lock);
+  a.key(mc::Key::Enter);
+  CHECK(a.screen == mc::Screen::Dashboard);
+  a.receive("two", "Two", "Hi", false);
+  a.open(0);
+  a.type("Entwurf A");
+  a.key(mc::Key::Back);
+  a.open(1);
+  CHECK(a.draft.empty());
+  a.type("Entwurf B");
+  a.open(0);
+  CHECK(a.draft == "Entwurf A");
+  a.open(1);
+  CHECK(a.draft == "Entwurf B");
+  a.key(mc::Key::Menu);
+  CHECK(a.menuOpen);
+  a.key(mc::Key::Next);
+  a.key(mc::Key::Enter);
+  CHECK(!a.menuOpen && a.screen == mc::Screen::Contacts);
+  a.open(1);
+  CHECK(a.draft == "Entwurf B");
+  a.key(mc::Key::Menu);
+  a.key(mc::Key::Back);
+  CHECK(!a.menuOpen && a.screen == mc::Screen::Conversation);
+  a.screen = mc::Screen::Map;
+  auto zoom = a.mapZoom;
+  a.key(mc::Key::Next);
+  CHECK(a.mapZoom == zoom + 1);
+  a.key(mc::Key::Previous);
+  CHECK(a.mapZoom == zoom);
+  a.open(1);
+  a.draft = "Nicht per Rad senden";
+  auto beforeMessages = a.messages.size();
+  a.key(mc::Key::Confirm);
+  CHECK(a.messages.size() == beforeMessages && !a.draft.empty());
+  CHECK(a.contextOpen);
+  a.key(mc::Key::Back);
+  a.key(mc::Key::Enter);
+  CHECK(a.messages.size() == std::min(beforeMessages + 1, mc::MaxMessages) && a.draft.empty());
+  CHECK(a.messages.back().text == "Nicht per Rad senden");
+  a.screen = mc::Screen::Contacts;
+  a.selected = 0;
+  a.open(1);
+  a.key(mc::Key::Back);
+  CHECK(a.screen == mc::Screen::Contacts);
+  a.key(mc::Key::Menu);
+  a.key(mc::Key::Confirm);
+  CHECK(!a.menuOpen && a.screen == mc::Screen::Contacts);
+  a.open(1);
+  a.draft = "Entwurf bleibt beim Heimweg";
+  a.menuOpen = true;
+  a.key(mc::Key::Home);
+  CHECK(a.screen == mc::Screen::Dashboard && !a.menuOpen && a.selected == 0);
+  a.open(1);
+  CHECK(a.draft == "Entwurf bleibt beim Heimweg");
+  for (int screen = 0; screen < 8; ++screen) {
+    a.screen = static_cast<mc::Screen>(screen);
+    a.menuOpen = true;
+    a.key(mc::Key::Home);
+    CHECK(a.screen == mc::Screen::Dashboard && !a.menuOpen);
+  }
+  CHECK(mc::Settings{}.language == mc::Language::English);
+  a.screen = mc::Screen::Settings;
+  a.selected = 0;
+  a.settings.language = mc::Language::English;
+  a.key(mc::Key::Confirm);
+  a.key(mc::Key::Next);
+  CHECK(a.settings.language == mc::Language::English);
+  a.key(mc::Key::Back);
+  CHECK(!a.settingsEditing && a.settings.language == mc::Language::English);
+  for (int language = 0; language < 4; ++language) {
+    a.key(mc::Key::Confirm);
+    a.settingChoice = language;
+    b.saved = false;
+    a.key(mc::Key::Enter);
+    CHECK(!a.settingsEditing && b.saved);
+    CHECK(static_cast<int>(a.settings.language) == language);
+    CHECK(mc::translate(a.settings.language, "Sprache") != "");
+  }
+  CHECK(mc::translate(mc::Language::English, "Sprache") == "Language");
+  CHECK(mc::translate(mc::Language::French, "Sprache") == "Langue");
+  CHECK(mc::translate(mc::Language::Spanish, "Sprache") == "Idioma");
+  a.key(mc::Key::Next);
+  CHECK(a.selected == 1);
+  a.key(mc::Key::Confirm);
+  a.settingChoice = 2;
+  a.key(mc::Key::Confirm);
+  CHECK(a.settings.theme == mc::Theme::Orange);
+  a.screen = mc::Screen::Map;
+  a.key(mc::Key::Confirm);
+  CHECK(a.mapMenuOpen && !a.mapFullscreen);
+  a.key(mc::Key::Confirm);
+  CHECK(a.mapFullscreen && !a.mapMenuOpen);
+  auto fullRadius = a.radius;
+  a.key(mc::Key::Next);
+  CHECK(a.radius <= fullRadius);
+  a.key(mc::Key::Enter);
+  a.key(mc::Key::Back);
+  CHECK(a.mapFullscreen && !a.mapMenuOpen);
+  a.key(mc::Key::Back);
+  CHECK(!a.mapFullscreen && a.screen == mc::Screen::Map);
+  a.key(mc::Key::Enter);
+  a.key(mc::Key::Next);
+  a.key(mc::Key::Enter);
+  CHECK(!a.mapMenuOpen && !a.mapFullscreen);
+  a.mapFullscreen = true;
+  a.key(mc::Key::Home);
+  CHECK(!a.mapFullscreen && !a.mapMenuOpen && a.screen == mc::Screen::Dashboard);
+  mc::BackGesture gesture;
+  using Gesture = mc::BackGesture::Action;
+  CHECK(gesture.update(true, 100) == Gesture::None);
+  CHECK(gesture.update(false, 180) == Gesture::Short);
+  CHECK(gesture.update(true, 200) == Gesture::None);
+  CHECK(gesture.update(true, 2200) == Gesture::None);
+  CHECK(gesture.update(true, 2201) == Gesture::Home);
+  CHECK(gesture.update(true, 2300) == Gesture::None);
+  CHECK(gesture.update(false, 2400) == Gesture::None);
+  CHECK(gesture.update(true, 2500) == Gesture::None);
+  CHECK(gesture.update(false, 4501) == Gesture::Home);
+  a.open(0);
+  a.draft = "Grüße";
+  a.key(mc::Key::Delete);
+  CHECK(a.draft == "Grüß" && a.screen == mc::Screen::Conversation);
+  a.key(mc::Key::Menu);
+  a.key(mc::Key::Delete);
+  CHECK(!a.menuOpen && a.draft == "Grüß");
+  a.key(mc::Key::Home);
+  a.open(0);
+  CHECK(a.draft == "Grüß");
+  a.key(mc::Key::Home);
+  a.nodes = {{"node-a", "Alpha", {}, 0, false, 3}, {"node-b", "Beta", {}, 0, false, 2}};
+  a.screen = mc::Screen::Contacts;
+  a.selected = 0;
+  a.key(mc::Key::Confirm);
+  CHECK(a.contextOpen && a.contextId == "node-a");
+  std::swap(a.nodes[0], a.nodes[1]);
+  a.contextSelected = 2;
+  a.key(mc::Key::Confirm);
+  CHECK(b.actionId == "node-a" && a.nodes[1].favorite);
+  a.selected = 1;
+  a.key(mc::Key::Confirm);
+  a.contextSelected = 3;
+  b.accept = false;
+  a.key(mc::Key::Enter);
+  CHECK(a.nodes[1].hops == 3);
+  b.accept = true;
+  a.key(mc::Key::Confirm);
+  a.contextSelected = 3;
+  a.key(mc::Key::Enter);
+  CHECK(a.nodes[1].hops == -1 && b.actionId == "node-a");
+  a.key(mc::Key::Confirm);
+  a.contextSelected = 1;
+  a.key(mc::Key::Enter);
+  CHECK(a.utility==mc::Utility::NodeDetails);
+  a.key(mc::Key::Delete);
+  CHECK(!a.contextOpen && a.utility==mc::Utility::None);
+  CHECK(!a.contextOpen && a.screen == mc::Screen::Contacts);
+  a.key(mc::Key::Confirm);
+  a.key(mc::Key::Confirm);
+  CHECK(a.screen == mc::Screen::Conversation && a.activeChat == "node-a");
+  a.draft = "Keep this draft";
+  auto sentBeforeMenu = b.calls;
+  a.key(mc::Key::Confirm);
+  CHECK(a.contextOpen && !a.type("x"));
+  a.key(mc::Key::Enter);
+  CHECK(!a.contextOpen && a.historyOffset == 0 && a.draft == "Keep this draft" && b.calls == sentBeforeMenu);
+  a.key(mc::Key::Context);
+  a.key(mc::Key::Home);
+  CHECK(!a.contextOpen);
+  a.chats.push_back({"channel:test", "Test channel", true, 0});
+  a.open(a.chats.size()-1);
+  a.key(mc::Key::Confirm);
+  for (auto action : a.contextActions()) CHECK(action != mc::ContextAction::Favorite && action != mc::ContextAction::ResetPath);
+  a.key(mc::Key::Back);
+  a.key(mc::Key::Home);
+  a.settings.setupComplete = true;
+  a.settings.helpVersion = 0;
+  a.startIntroduction();
+  CHECK(a.helpOpen && a.firstRunHelp && a.helpPage == 0);
+  CHECK(!a.type("x"));
+  a.key(mc::Key::Home);
+  CHECK(!a.helpOpen && a.settings.helpVersion == 0);
+  a.startIntroduction();
+  for (int i = 0; i < 3; ++i) a.key(mc::Key::Confirm);
+  CHECK(a.helpOpen && a.helpPage == 3);
+  b.saveAccept = false;
+  a.key(mc::Key::Confirm);
+  CHECK(a.helpOpen && a.settings.helpVersion == 0);
+  b.saveAccept = true;
+  a.key(mc::Key::Confirm);
+  CHECK(!a.helpOpen && a.settings.helpVersion == 1);
+  a.startIntroduction();
+  CHECK(!a.helpOpen);
+  a.screen = mc::Screen::Settings;
+  a.selected = 10;
+  a.key(mc::Key::Next);
+  CHECK(a.selected == 11);
+  a.key(mc::Key::Confirm);
+  CHECK(a.helpOpen && !a.firstRunHelp);
+  a.key(mc::Key::Next);
+  a.key(mc::Key::Back);
+  CHECK(a.helpPage == 0 && a.helpOpen);
+  a.key(mc::Key::Back);
+  CHECK(!a.helpOpen && a.screen == mc::Screen::Settings);
+  a.openHelp();
+  a.key(mc::Key::Menu);
+  CHECK(!a.helpOpen && a.menuOpen);
+  a.key(mc::Key::Home);
+  a.screen = mc::Screen::Lock;
+  a.key(mc::Key::Menu);
+  CHECK(a.menuOpen && a.screen == mc::Screen::Dashboard);
+  auto d = mc::locate({0, 0, true}, {0, 1, true});
+  CHECK(d.meters > 111000 && d.meters < 112000);
+  CHECK(d.degrees > 89 && d.degrees < 91);
+  std::cout << "Core behavior tests passed\n";
+}

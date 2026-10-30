@@ -1,0 +1,28 @@
+MeshCator – Designstudie 04
+
+Grundlage: PLAN.md und DESIGN.md, Stand 30.10.2026.
+MeshCator ist der vom Nutzer festgelegte App-Name.
+
+Lieferumfang
+- preview.html: lokale Galerie, Originalgröße und 2-fache Vergrößerung.
+- assets/display: sieben editierbare SVG-Entwürfe mit 480 × 222 px.
+- assets/icons: zwölf eigenständig gezeichnete SVG-Glyphen, 16 × 16 px.
+- assets/brand/meshcator-logo.png: Logo aus dem integrierten Imagegen-Werkzeug.
+- tools/build_design_preview.py: reproduzierbarer Generator für UI und Galerie.
+
+Entscheidungen
+Aktuelle Gestaltung und Layoutmaße: siehe STYLE-V3.txt.
+Auf Text-Screens bleibt der Hintergrund ruhig; Instrumentgrafik bei Scan und Karte.
+Farbige Navigationsflächen tragen dunkle Labels; Fließtext steht hell auf Schwarz.
+Der Sperrbildschirm verwendet den korrekten Wochentag für den 30.10.2026.
+Das Kartenbild zeigt ein Schema, keine geografischen Daten.
+Alle Nachrichten, Messwerte, Uhrzeiten und Zustände sind Beispieldaten.
+
+Grenzen der Vorschau
+Keine Firmware-Implementierung und keine funktionale Navigation zwischen Modi.
+1:1 meint CSS-Pixel; physische Größe hängt vom Bildschirm und dessen Skalierung ab.
+Inter und JetBrains Mono sind nicht eingebettet; lokale Ersatzschriften werden benutzt.
+Tag-/Rotlicht-Theme, Großschrift, Hardware-Lesbarkeit und echte Encoder-Bedienung
+sind hier noch nicht validiert. SVGs müssen für LVGL exportiert/implementiert werden.
+Das generierte Logo ist ein Rasterentwurf; eine saubere Vektorreinzeichnung bleibt
+für einen finalen Firmware-/Druck-Master sinnvoll.

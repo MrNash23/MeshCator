@@ -1,0 +1,326 @@
+#include "UITask.h"
+#include "target.h"
+#include <Arduino.h>
+#include <helpers/CommonCLI.h>
+
+#ifndef USER_BTN_PRESSED
+#define USER_BTN_PRESSED LOW
+#endif
+
+#define AUTO_OFF_MILLIS      20000  // 20 seconds
+#define BOOT_SCREEN_MILLIS   4000   // 4 seconds
+
+#define POWEROFF_DELAY 3000
+
+// 'meshcore', 128x13px
+static const uint8_t meshcore_logo [] PROGMEM = {
+    0x3c, 0x01, 0xe3, 0xff, 0xc7, 0xff, 0x8f, 0x03, 0x87, 0xfe, 0x1f, 0xfe, 0x1f, 0xfe, 0x1f, 0xfe, 
+    0x3c, 0x03, 0xe3, 0xff, 0xc7, 0xff, 0x8e, 0x03, 0x8f, 0xfe, 0x3f, 0xfe, 0x1f, 0xff, 0x1f, 0xfe, 
+    0x3e, 0x03, 0xc3, 0xff, 0x8f, 0xff, 0x0e, 0x07, 0x8f, 0xfe, 0x7f, 0xfe, 0x1f, 0xff, 0x1f, 0xfc, 
+    0x3e, 0x07, 0xc7, 0x80, 0x0e, 0x00, 0x0e, 0x07, 0x9e, 0x00, 0x78, 0x0e, 0x3c, 0x0f, 0x1c, 0x00, 
+    0x3e, 0x0f, 0xc7, 0x80, 0x1e, 0x00, 0x0e, 0x07, 0x1e, 0x00, 0x70, 0x0e, 0x38, 0x0f, 0x3c, 0x00, 
+    0x7f, 0x0f, 0xc7, 0xfe, 0x1f, 0xfc, 0x1f, 0xff, 0x1c, 0x00, 0x70, 0x0e, 0x38, 0x0e, 0x3f, 0xf8, 
+    0x7f, 0x1f, 0xc7, 0xfe, 0x0f, 0xff, 0x1f, 0xff, 0x1c, 0x00, 0xf0, 0x0e, 0x38, 0x0e, 0x3f, 0xf8, 
+    0x7f, 0x3f, 0xc7, 0xfe, 0x0f, 0xff, 0x1f, 0xff, 0x1c, 0x00, 0xf0, 0x1e, 0x3f, 0xfe, 0x3f, 0xf0, 
+    0x77, 0x3b, 0x87, 0x00, 0x00, 0x07, 0x1c, 0x0f, 0x3c, 0x00, 0xe0, 0x1c, 0x7f, 0xfc, 0x38, 0x00, 
+    0x77, 0xfb, 0x8f, 0x00, 0x00, 0x07, 0x1c, 0x0f, 0x3c, 0x00, 0xe0, 0x1c, 0x7f, 0xf8, 0x38, 0x00, 
+    0x73, 0xf3, 0x8f, 0xff, 0x0f, 0xff, 0x1c, 0x0e, 0x3f, 0xf8, 0xff, 0xfc, 0x70, 0x78, 0x7f, 0xf8, 
+    0xe3, 0xe3, 0x8f, 0xff, 0x1f, 0xfe, 0x3c, 0x0e, 0x3f, 0xf8, 0xff, 0xfc, 0x70, 0x3c, 0x7f, 0xf8, 
+    0xe3, 0xe3, 0x8f, 0xff, 0x1f, 0xfc, 0x3c, 0x0e, 0x1f, 0xf8, 0xff, 0xf8, 0x70, 0x3c, 0x7f, 0xf8, 
+};
+
+void UITask::begin(NodePrefs* node_prefs, const char* build_date, const char* firmware_version) {
+  _prevBtnState = HIGH;
+  _auto_off = millis() + AUTO_OFF_MILLIS;
+  _started_at = millis();
+  _node_prefs = node_prefs;
+  _display->turnOn();
+
+#if defined(PIN_USER_BTN) && defined(DISPLAY_CLASS)
+  user_btn.begin();
+#endif
+
+  // strip off dash and commit hash by changing dash to null terminator
+  // e.g: v1.2.3-abcdef -> v1.2.3
+  char *version = strdup(firmware_version);
+  char *dash = strchr(version, '-');
+  if(dash){
+    *dash = 0;
+  }
+
+  // v1.2.3 (1 Jan 2025)
+  snprintf(_version_info, sizeof(_version_info), "%s (%s)", version, build_date);
+  free(version);
+}
+
+// Forward declarations for non-home screen renderers — defined at the bottom
+// of this file to keep renderCurrScreen readable.
+static void renderAboutScreen(DisplayDriver* d, const char* version_info);
+#if COMPOSE_BUFFER_SIZE > 0
+static void renderComposeScreen(DisplayDriver* d, const char* buf, uint16_t len);
+#endif
+
+void UITask::renderCurrScreen() {
+  char tmp[80];
+
+  // Non-home screens skip the boot/home logic entirely.
+  if (_current_screen == 1) {
+    renderAboutScreen(_display, _version_info);
+    return;
+  }
+#if COMPOSE_BUFFER_SIZE > 0
+  if (_current_screen == 2) {
+    renderComposeScreen(_display, _compose_buf, _compose_len);
+    return;
+  }
+#endif
+
+  if (millis() < _started_at + BOOT_SCREEN_MILLIS) { // boot screen
+    // meshcore logo
+    _display->setColor(UIColor::corp_blue);
+    int logoWidth = 128;
+    _display->drawXbm((_display->width() - logoWidth) / 2, 3, meshcore_logo, logoWidth, 13);
+
+    // meshcore website
+    const char* website = "https://meshcore.io";
+    _display->setColor(UIColor::primary_txt);
+    _display->setTextSize(1);
+    _display->drawTextCentered(_display->width() / 2, 22, website);
+
+    // version info
+    _display->setTextSize(1);
+    _display->drawTextCentered(_display->width() / 2, 35, _version_info);
+
+    // node type
+    const char* node_type = "< Repeater >";
+    _display->drawTextCentered(_display->width() / 2, 48, node_type);
+  } else if (_powering_off_at > 0) {
+    // meshcore logo
+    _display->setColor(UIColor::corp_blue);
+    int logoWidth = 128;
+    _display->drawXbm((_display->width() - logoWidth) / 2, 3, meshcore_logo, logoWidth, 13);
+
+    // meshcore website
+    const char* website = "https://meshcore.io";
+    _display->setColor(UIColor::primary_txt);
+    _display->setTextSize(1);
+    _display->drawTextCentered(_display->width()/ 2, 22, website);
+
+    // Powering off
+    const char* poweroff_string = "Turning OFF";
+    uint16_t poffWidth = _display->getTextWidth(poweroff_string);
+    _display->setCursor((_display->width() - poffWidth) / 2, 48);
+    _display->drawTextCentered(_display->width()/2, 48, poweroff_string);
+  } else {
+    _display->setCursor(0, 0);
+    _display->setTextSize(1);
+    _display->setColor(UIColor::primary_txt);
+    _display->print(_node_prefs->node_name);
+
+    // freq / sf
+    _display->setCursor(0, 20);
+    sprintf(tmp, "FREQ: %06.3f SF%d", _node_prefs->freq, _node_prefs->sf);
+    _display->print(tmp);
+
+    // bw / cr
+    _display->setCursor(0, 30);
+    sprintf(tmp, "BW: %03.2f CR: %d", _node_prefs->bw, _node_prefs->cr);
+    _display->print(tmp);
+
+    // uptime (only render on taller displays — fits below the bw/cr line)
+    if (_display->height() >= 50) {
+      unsigned long up_s = millis() / 1000;
+      _display->setCursor(0, 40);
+      _display->setColor(UIColor::secondary_txt);
+      sprintf(tmp, "UP: %02lu:%02lu:%02lu",
+              up_s / 3600, (up_s / 60) % 60, up_s % 60);
+      _display->print(tmp);
+    }
+
+    // path hash size (mode 0/1/2 maps to 1/2/3 bytes)
+    if (_display->height() >= 60) {
+      _display->setCursor(0, 50);
+      _display->setColor(UIColor::secondary_txt);
+      int bytes = _node_prefs->path_hash_mode + 1;
+      sprintf(tmp, "PATH: %d byte%s", bytes, bytes == 1 ? "" : "s");
+      _display->print(tmp);
+    }
+
+    // Variant-defined extra status lines (weak symbol — default no-op).
+    // The variant's target.cpp may override this to draw RGN, RSSI/SNR,
+    // battery, GPS, etc. without touching shared UITask code.
+    extern void render_extra_status_lines(DisplayDriver* d, int start_y)
+      __attribute__((weak));
+    if (render_extra_status_lines && _display->height() >= 70) {
+      render_extra_status_lines(_display, 60);
+    }
+  }
+}
+
+void UITask::loop() {
+#if defined(PIN_ENCODER_A) && defined(PIN_ENCODER_B)
+  // Rotary encoder — falling edge on A signals one detent. Direction is
+  // taken from B's state at that moment: B HIGH = CW, B LOW = CCW.
+  // Polled here at loop rate; for fast spinning we may miss steps, but
+  // for menu navigation that is fine.
+  static int last_enc_a = HIGH;
+  int enc_a = digitalRead(PIN_ENCODER_A);
+  if (last_enc_a == HIGH && enc_a == LOW) {
+    int enc_b = digitalRead(PIN_ENCODER_B);
+    if (enc_b == HIGH) {
+      _current_screen = (_current_screen + 1) % NUM_SCREENS;
+    } else {
+      _current_screen = (_current_screen + NUM_SCREENS - 1) % NUM_SCREENS;
+    }
+    _next_refresh = 0;
+    _auto_off = millis() + AUTO_OFF_MILLIS;
+    if (!_display->isOn()) _display->turnOn();
+  }
+  last_enc_a = enc_a;
+#endif
+
+#if defined(PIN_USER_BTN) && defined(DISPLAY_CLASS)
+  int ev = user_btn.check();
+  if (ev == BUTTON_EVENT_CLICK && _powering_off_at == 0) {
+    if (_display->isOn()) {
+      // Cycle to the next screen (boards with NUM_SCREENS > 1).
+      _current_screen = (_current_screen + 1) % NUM_SCREENS;
+      _next_refresh = 0;  // force immediate redraw
+    } else {
+      _display->turnOn();
+    }
+    _auto_off = millis() + AUTO_OFF_MILLIS;   // extend auto-off timer
+  } else if (ev == BUTTON_EVENT_LONG_PRESS) {
+      _display->turnOn();
+      Serial.println("Powering Off");
+      _powering_off_at = millis() + POWEROFF_DELAY;
+  }
+#endif
+
+  if (_display->isOn()) {
+    if (millis() >= _next_refresh) {
+      _display->startFrame();
+      renderCurrScreen();
+      _display->endFrame();
+
+      _next_refresh = millis() + 1000;   // refresh every second
+    }
+    if (millis() > _auto_off) {
+      _display->turnOff();
+    }
+  }
+
+  if (_powering_off_at > 0) { // power off timer armed
+#ifdef LED_PIN
+    digitalWrite(LED_PIN, LED_STATE_ON); // switch on the led until poweroff
+#endif
+    if (millis() > _powering_off_at) {
+      _board->powerOff();  // should not return
+    }
+  }
+}
+
+// --- Optional 'About' screen --------------------------------------------------
+//
+// Renders firmware version, MAC address and free heap. Only used when a
+// variant defines NUM_SCREENS > 1 and the user has cycled past the home
+// screen via the PIN_USER_BTN.
+
+#ifdef ESP_PLATFORM
+#include <esp_mac.h>
+#endif
+
+static void renderAboutScreen(DisplayDriver* d, const char* version_info) {
+  char tmp[64];
+  d->setColor(UIColor::secondary_txt);
+  d->setTextSize(1);
+
+  d->setCursor(0, 0);
+  d->print("About");
+
+  d->setCursor(0, 12);
+  d->print(version_info);
+
+#ifdef ESP_PLATFORM
+  uint8_t mac[6] = {0};
+  esp_efuse_mac_get_default(mac);
+  d->setCursor(0, 24);
+  sprintf(tmp, "MAC: %02X:%02X:%02X:%02X:%02X:%02X",
+          mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+  d->print(tmp);
+
+  d->setCursor(0, 36);
+  sprintf(tmp, "HEAP: %u KB", (unsigned)(ESP.getFreeHeap() / 1024));
+  d->print(tmp);
+
+  d->setCursor(0, 48);
+  sprintf(tmp, "FLASH: %u MB", (unsigned)(ESP.getFlashChipSize() / (1024 * 1024)));
+  d->print(tmp);
+#endif
+}
+
+#if COMPOSE_BUFFER_SIZE > 0
+// --- Optional compose screen --------------------------------------------------
+//
+// Active when _current_screen == 2. The variant routes keyboard events to
+// UITask::addInputChar(). On Enter we hand the buffer to the weak bridge
+// 'ui_send_message' (typically defined in main.cpp) and clear.
+
+extern "C" void ui_send_message(const char* msg) __attribute__((weak));
+
+static void renderComposeScreen(DisplayDriver* d, const char* buf, uint16_t len) {
+  d->setColor(UIColor::secondary_txt);
+  d->setTextSize(1);
+
+  d->setCursor(0, 0);
+  d->setColor(UIColor::warning_txt);
+#ifdef COMPOSE_CHANNEL
+  char hdr[40];
+  snprintf(hdr, sizeof(hdr), "Compose %s", COMPOSE_CHANNEL);
+  d->print(hdr);
+#else
+  d->print("Compose");
+#endif
+
+  // Visible buffer — append a block cursor for legibility.
+  d->setColor(UIColor::secondary_txt);
+  char shown[COMPOSE_BUFFER_SIZE + 2];
+  size_t n = len < COMPOSE_BUFFER_SIZE ? len : COMPOSE_BUFFER_SIZE - 1;
+  memcpy(shown, buf, n);
+  shown[n] = '_';
+  shown[n + 1] = 0;
+  d->setCursor(0, 14);
+  d->printWordWrap(shown, d->width());
+
+  // Hint at the bottom.
+  d->setCursor(0, d->height() - 8);
+  d->setColor(UIColor::secondary_txt);
+  d->print("Enter=send  Bksp=del");
+}
+
+void UITask::addInputChar(char c) {
+  if (_current_screen != 2) return;   // only when compose screen is active
+  _next_refresh = 0;                  // force redraw
+
+  if (c == '\b' || c == 0x7F) {       // backspace / delete
+    if (_compose_len > 0) {
+      _compose_buf[--_compose_len] = 0;
+    }
+    return;
+  }
+  if (c == '\r' || c == '\n') {       // submit
+    if (_compose_len > 0) {
+      _compose_buf[_compose_len] = 0;
+      if (ui_send_message) ui_send_message(_compose_buf);
+      _compose_len = 0;
+      _compose_buf[0] = 0;
+    }
+    return;
+  }
+  if (c < 0x20 || c > 0x7E) return;   // ignore non-printable
+  if (_compose_len + 1 >= COMPOSE_BUFFER_SIZE) return;
+  _compose_buf[_compose_len++] = c;
+  _compose_buf[_compose_len] = 0;
+}
+#endif  // COMPOSE_BUFFER_SIZE > 0
+

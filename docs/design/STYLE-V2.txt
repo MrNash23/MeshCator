@@ -1,0 +1,34 @@
+MeshCator / Designstudie 02
+
+Nutzervorgabe: Gestaltung stärker in Richtung der angehängten LCARS-Referenz.
+Umsetzung als native SVGs; keine Bildgenerierung für diese Änderung.
+
+Formensprache
+- Geschwungener Rahmen links, segmentierte Kopf- und Abschlussbalken.
+- Abgerundete Listenüberschriften und Wertefelder.
+- Segmentierter Radarring, klare Messwerte, reduzierte Kartendarstellung.
+- Keine dekorativen Zufallszahlen: Zahlen stehen für tatsächliche Beispielwerte.
+- Fließtext bleibt in einer gut lesbaren Grotesk; Labels fett und kompakt.
+
+Nachtpalette
+Hintergrund #000000; Text #FFF2E8; Sekundärtext #C7B8D4.
+Orange #FF9C32: aktive Auswahl und primäre Messwerte.
+Lavendel #ADA3FF: Navigation und sekundäre Instrumente.
+Rosa #F49AC2: Nachrichten und Kategorien.
+Pfirsich #FFC794: Werte und Statusfelder.
+Pflaume #B77CAB: ergänzende Segmente.
+Dunkle Flächen #100D16 / #292033, Raster #43344F.
+
+480 × 222 px
+Navigation y=4..24, aktiver Tab zusätzlich unterstrichen bei y=26..28.
+Rahmen x=4..20, Inhalt überwiegend x=28..472 und y=35..193.
+Abschlusssegmente y=198..204, Tastenhinweise bis y=217.
+Die größere Marken-/Modusleiste ersetzt in dieser Studie die frühere 20-px-Leiste.
+Akku/GPS erscheinen exemplarisch im Chat/Scan und auf dem Sperrbildschirm;
+eine finale globale Statuslösung bleibt für die Firmware auszuarbeiten.
+
+Alle sieben Screens und zwölf Icons sind im Generator reproduzierbar.
+Das bestehende cyanfarbene Logo bleibt vorerst unverändert als Markenreferenz.
+Die frühere Galerie und Screens sind unter archive-v1 erhalten.
+Prüfung: SVG-XML, Abmessungen und lokale Dateiverweise; visuelle Browserprüfung.
+Hardware-Lesbarkeit, Großschrift, Tag/Rotlicht und Encoder-Flows sind noch offen.

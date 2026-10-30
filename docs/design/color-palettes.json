@@ -1,0 +1,66 @@
+{
+  "warm-orange": {
+    "name": "Warm Orange",
+    "description": "Kohle, Kupfer und warmes Orange. Türkis setzt einen kühlen Gegenakzent.",
+    "colors": {
+      "bg": "#19130F",
+      "surface": "#261D17",
+      "focus": "#453025",
+      "line": "#69503F",
+      "text": "#FFF2E6",
+      "muted": "#CDB6A3",
+      "accent": "#FFAA5C",
+      "notice": "#F7CD71",
+      "secondary": "#79C9C0",
+      "readout": "#FFE0BA",
+      "subtle": "#A87E5C",
+      "green": "#96D7A2",
+      "info": "#79C9C0",
+      "warning": "#F7CD71",
+      "danger": "#FF8580",
+      "success": "#96D7A2"
+    },
+    "text_contrast_min_over_bg_surface_focus": {
+      "text": 11.22,
+      "muted": 6.35,
+      "accent": 6.55,
+      "notice": 8.18,
+      "info": 6.42,
+      "success": 7.36,
+      "warning": 8.18,
+      "danger": 5.24
+    }
+  },
+  "neon-purple": {
+    "name": "Neon Purple",
+    "description": "Tiefes Violett mit leuchtendem Purple. Eis-Cyan und Pink akzentuieren sparsam.",
+    "colors": {
+      "bg": "#110E1B",
+      "surface": "#1D172C",
+      "focus": "#342348",
+      "line": "#584270",
+      "text": "#F6EFFF",
+      "muted": "#BEB0D1",
+      "accent": "#C58AFF",
+      "notice": "#FF8BD3",
+      "secondary": "#77DCE8",
+      "readout": "#E2C9FF",
+      "subtle": "#8872A6",
+      "green": "#85E3B0",
+      "info": "#77DCE8",
+      "warning": "#FFD166",
+      "danger": "#FF859B",
+      "success": "#85E3B0"
+    },
+    "text_contrast_min_over_bg_surface_focus": {
+      "text": 12.64,
+      "muted": 6.97,
+      "accent": 5.71,
+      "notice": 6.68,
+      "info": 8.91,
+      "success": 9.2,
+      "warning": 9.84,
+      "danger": 6.14
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "version": "0.3.8-dev",
+  "flashed": true,
+  "tests_passed": 21,
+  "tests_total": 21,
+  "firmware_sha256": "b269a496aed470022dab556a4f27415eb8a58dcee7efd44312427f26b8c4d052",
+  "app_binary_bytes": 2357952,
+  "flash_reserve_bytes": 1344,
+  "max_messages": 512,
+  "sd_archive_hardware_verified": false,
+  "blocker": null,
+  "feature_notes": "docs/HISTORY-0.3.8.md",
+  "update_report": "backups/pager-2026-10-30/update-0.3.8/update-report.json"
+}

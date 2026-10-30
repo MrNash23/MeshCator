@@ -1,0 +1,25 @@
+MeshCator / Designstudie 03
+
+Eigenständige Gestaltung nach Nutzerwunsch.
+Ersetzt die referenznahe Designstudie 02; diese ist unter archive-v2 archiviert.
+
+Farben: Graphit #101819, Flächen #172426, Fokusfläche #253C3C,
+Text #EFF4E8, Sekundärtext #AEC2BD, Limette #D2E86C,
+Petrol #7CB9B0, Sand #E6C572, Linien #355052.
+
+Formen: gerade Textnavigation mit Unterstrich für den aktiven Modus;
+kleine rechteckige Statusfelder und schmale senkrechte Auswahlmarken.
+Keine umgreifenden Seitenrahmen, bunten Kapselreihen oder segmentierten Radarringe.
+Der Scan nutzt feine Distanzkreise und Kardinalmarken.
+Normalschrift statt schmaler Science-Fiction-Typografie; kein Franchise-Slogan.
+
+Alle sieben Screens in 480 × 222 px, globale Zeit/GPS/Akku-Anzeige,
+Tastenhinweise und bisherige Inhalte bleiben erhalten.
+SVGs und Galerie entstehen mit tools/build_design_preview.py.
+Logo unverändert. Hardware-Lesbarkeit und Bedienung sind noch zu prüfen.
+Dies dokumentiert gestalterische Änderungen, keine rechtliche Freigabe.
+
+Fortschreibung / Designstudie 04
+Auf Nutzerwunsch wieder weichere Rundungen: Felder 7–9 px, Karten 12 px,
+kurze gerundete Auswahlmarker und eine dezente gebogene Abschlusslinie.
+Palette, offene Anordnung und feine Distanzringe aus Version 03 bleiben erhalten.

@@ -1,0 +1,24 @@
+Tool: integriertes image_gen, kein CLI/API-Fallback.
+
+Umbenennung in MeshCator (aktueller App-Name):
+undefined
+Ausgabe: assets/brand/meshcator-logo.png
+
+Die folgenden Prompts dokumentieren die historischen Entwürfe vor der Umbenennung.
+
+Initial logo prompt:
+Use case: logo-brand
+Asset type: project logo, transparent PNG
+Primary request: Create a refined original logo for MeshCorder, a standalone LoRa mesh communicator firmware for a keyboard pager, also used as a field measurement instrument. Exact wordmark "MeshCorder". Left of wordmark a compact geometric monogram M made from a few connected mesh nodes and straight signal paths; incorporate a restrained incomplete scanning ring. Clear silhouette, reproducible at small sizes.
+Style: flat precise vector-like design, professional technical instrument identity, quietly confident, no decorative sci-fi complexity.
+Colors: cyan #47C8E0 symbol, near-white #E4EEF5 wordmark, intended for #05080C dark background. Transparent background.
+Composition: one horizontal logo centered with generous clearspace; symbol and wordmark only.
+Constraints: exact spelling, no tagline, no extra labels, no gradients, no shadows, no glow, no mockup, no Star Trek logos or franchise references.
+
+Cleanup prompt:
+Clean up this MeshCorder logo. Preserve the exact composition, symbol, spelling and palette. Remove ALL grunge, speckles, scratches, distressed edges and stray pixels. Perfectly clean smooth flat solid cyan symbol and flat near-white letters, precise clean vector-like edges. Truly transparent background. No texture, no gradients, no shadows. This is a production logo cleanup.
+
+Finaler Prompt auf dunklem Hintergrund:
+Use case: logo-brand. Create one pristine flat graphic logo on a uniform solid #05080C background. Exact text MeshCorder in near-white #E4EEF5 clean geometric sans serif, large and legible. To its left a cyan #47C8E0 symbol: a geometric M composed of connected mesh nodes enclosed in a broken scanning circle. Horizontal composition, generous clear space. Original identity for a LoRa mesh field communicator. Absolutely flat solid colors, perfectly smooth edges, NO texture, NO distressed effects, NO grain, NO scratches, NO transparency, NO glow, NO shadows, NO gradients, no other text. Professional clean vector-like brand design.
+
+UI-SVGs und Icons wurden deterministisch mit tools/build_design_preview.py erstellt.
