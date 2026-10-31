@@ -22,3 +22,5 @@
 #define LV_USE_OS LV_OS_NONE
 
 #define LV_USE_QRCODE 1
+
+#define LV_USE_FONT_COMPRESSED 1

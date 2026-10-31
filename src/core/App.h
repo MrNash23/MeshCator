@@ -59,12 +59,14 @@ struct Message {
   Delivery delivery = Delivery::Received;
   uint32_t timestamp = 0;
   uint32_t ack = 0, deadline = 0;
+  bool unread = false;
 };
 struct Status {
   int battery = -1, sats = 0;
   bool fix = false, simulation = false;
   uint32_t epoch = 0;
   Position position;
+  bool usbPowered = false, charging = false;
 };
 struct Waypoint { std::string name; Position position; };
 struct Settings {
@@ -87,7 +89,7 @@ struct Settings {
   int notificationMode = 2, notificationVolume = 40;
   std::map<std::string,int> notificationRules;
 };
-enum class Utility {None,DeleteEntry,ClearHistory,Import,Export,Rename,Emoji,RemoteMenu,RemoteLogin,RemoteCommand,RemoteOutput,ChatMenu,SetPath,Permissions,TelemetryPolicy,QR,NodeDetails};
+enum class Utility {None,DeleteEntry,ClearHistory,Import,Export,Rename,Emoji,RemoteMenu,RemoteLogin,RemoteCommand,RemoteOutput,ChatMenu,SetPath,Permissions,TelemetryPolicy,QR,NodeDetails,About};
 struct SendResult {bool ok=false;uint32_t ack=0, timeout=0;};
 struct Backend {
   virtual ~Backend() = default;
@@ -96,6 +98,7 @@ struct Backend {
   virtual std::string createChannel(const std::string &, const std::string &, bool) { return {}; }
   virtual std::string channelKey() { return {}; }
   virtual bool readTile(int, int, int, std::vector<uint16_t>&) { return false; }
+  virtual bool mapHome(Position&, int&) { return false; }
   virtual bool send(const Chat &, const std::string &) = 0;
   virtual SendResult sendTracked(const Chat &c,const std::string &s){return {send(c,s),0,0};}
   virtual bool channelInfo(const std::string&,std::string&,std::string&){return false;}
@@ -149,6 +152,10 @@ public:
   double radius = 2000;
   int mapZoom = 2;
   Position mapCenter{0, 0, false};
+  Position offlineMapCenter{0, 0, false};
+  bool mapHomeLoaded = false;
+  void prepareMap();
+  bool panMap(char key);
   std::string mapCaption;
   int navigationTarget = -1;
   bool waypointNaming = false, waypointList = false;
@@ -230,6 +237,9 @@ public:
     dirty = true;
     ++revision;
   }
+  unsigned unreadBadgeCount(bool channel) const;
+  void readCurrentMessage();
+  void recountUnread();
   void open(size_t);
   void persist();
   size_t itemCount() const;

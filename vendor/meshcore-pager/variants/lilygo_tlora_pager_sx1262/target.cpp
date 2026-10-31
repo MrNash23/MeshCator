@@ -219,6 +219,7 @@ static bool xl9555_set_output(uint8_t pin, bool high) {
 }
 
 // Official LilyGO Pager board definition: XL9555 P0 = EXPANDS_DRV_EN.
+extern "C" bool meshcator_power_output(uint8_t pin, bool enabled) { return xl9555_set_output(pin, enabled); }
 extern "C" bool meshcator_haptic_power(bool enabled) { return xl9555_set_output(0, enabled); }
 
 // --- GPS power rail (XL9555) ---------------------------------------------------
@@ -654,6 +655,8 @@ static void batt_ref_save(int mah) {
     p.end();
   }
 }
+
+extern "C" int tpager_charge_status() { return read_bq25896_reg(0x0B); }
 
 extern "C" int tpager_battery_percent() {
   if (!s_batt_ref_loaded) batt_ref_load();

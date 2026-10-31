@@ -65,14 +65,15 @@ void View::panel(int x, int y, int w, int h, uint32_t color, int radius) {
   lv_obj_set_style_radius(o, radius, 0);
   lv_obj_remove_flag(o, LV_OBJ_FLAG_SCROLLABLE);
 }
-void View::label(int x, int y, int w, const std::string &s, int z, uint32_t color) {
+lv_obj_t* View::label(int x, int y, int w, const std::string &s, int z, uint32_t color) {
   auto o = lv_label_create(root_);
   lv_obj_set_pos(o, x, y);
   lv_obj_set_width(o, w);
   lv_label_set_long_mode(o, LV_LABEL_LONG_WRAP);
-  lv_label_set_text(o, s.c_str());
+  lv_label_set_text(o, emojiDisplayText(s).c_str());
   lv_obj_set_style_text_font(o, font(z), 0);
   lv_obj_set_style_text_color(o, lv_color_hex(color), 0);
+  return o;
 }
 void View::segment(int x, int y, int a, int b, uint32_t color, int width) {
   auto o = lv_line_create(root_);
@@ -87,6 +88,35 @@ void View::segment(int x, int y, int a, int b, uint32_t color, int width) {
       o, [](lv_event_t *e) { lv_free(lv_event_get_user_data(e)); }, LV_EVENT_DELETE, owned);
   lv_obj_set_style_line_color(o, lv_color_hex(color), 0);
   lv_obj_set_style_line_width(o, width, 0);
+}
+void View::unreadBadge(int x,int y,unsigned count,uint32_t tileColor) {
+  if(!count)return;
+  panel(x,y,30,30,0x000000,15);
+  label(x,y+7,30,count>99?"99+":std::to_string(count),12,tileColor);
+  lv_obj_set_style_text_align(lv_obj_get_child(root_,-1),LV_TEXT_ALIGN_CENTER,0);
+}
+void View::menuIcon(int x,int y,size_t index,uint32_t color) {
+  // Consistent 40px vector grid: real rounded rectangles/circles, 2px strokes.
+  auto box=[&](int dx,int dy,int w,int h,int radius){
+    auto o=lv_obj_create(root_);lv_obj_remove_style_all(o);
+    lv_obj_set_pos(o,x+dx,y+dy);lv_obj_set_size(o,w,h);
+    lv_obj_set_style_radius(o,radius,0);lv_obj_set_style_border_width(o,2,0);
+    lv_obj_set_style_border_color(o,lv_color_hex(color),0);
+    lv_obj_set_style_border_opa(o,LV_OPA_COVER,0);
+    lv_obj_remove_flag(o,LV_OBJ_FLAG_SCROLLABLE);
+  };
+  auto line=[&](int a,int b,int c,int d){segment(x+a,y+b,x+c,y+d,color,2);
+    lv_obj_set_style_line_rounded(lv_obj_get_child(root_,-1),true,0);};
+  switch(index){
+  case 0: box(3,5,34,25,6);line(10,29,10,35);line(10,35,17,29);line(11,13,29,13);line(11,20,24,20);break;
+  case 1: box(13,3,14,14,7);box(5,23,30,14,7);break;
+  case 2: box(2,2,36,36,18);box(11,11,18,18,9);line(20,20,32,8);box(18,18,4,4,2);break;
+  case 3: line(3,8,14,3);line(14,3,26,8);line(26,8,37,3);line(37,3,37,32);line(37,32,26,37);line(26,37,14,32);line(14,32,3,37);line(3,37,3,8);line(14,3,14,32);line(26,8,26,37);break;
+  case 4: box(3,25,8,12,2);box(16,15,8,22,2);box(29,3,8,34,2);break;
+  case 5: line(3,8,9,8);line(17,8,37,8);box(9,4,8,8,4);
+          line(3,20,23,20);line(31,20,37,20);box(23,16,8,8,4);
+          line(3,32,13,32);line(21,32,37,32);box(13,28,8,8,4);break;
+  }
 }
 void View::splash() {
   auto tr = [&](const std::string &key) { return translate(app_.settings.language, key); };
@@ -114,7 +144,8 @@ void View::splash() {
 }
 void View::render() {
   auto tr = [&](const std::string &key) { return translate(app_.settings.language, key); };
-  if (!app_.dirty)
+  const bool pendingMap=mapPending_&&app_.screen==Screen::Map&&!app_.menuOpen&&!app_.helpOpen&&!app_.contextOpen&&!app_.mapMenuOpen&&!app_.waypointNaming&&!app_.waypointList&&!app_.notificationMenu&&app_.utility==Utility::None;
+  if (!app_.dirty&&!pendingMap)
     return;
   app_.dirty = false;
   if (!root_)
@@ -128,30 +159,28 @@ void View::render() {
     label(420, 5, 55, std::to_string(app_.helpPage + 1) + "/4", 14, p.fg);
     const char *titles[] = {"1. Drehen", "2. Klicken / Enter", "3. Rad halten", "4. Zurück / Löschen"};
     const char *bodies[] = {
-      "Rad: auswählen.\nIm Chat: Verlauf. Auf der Karte: Zoom.",
+      "Rad: Wahl / Chat: Verlauf / Karte: Zoom.\nKarte bewegen: A links, S rechts,\nW hoch, Z runter.",
       "Klick: bestätigen oder Menü öffnen.\nEnter: bestätigen; im Chat senden.",
       "Rad halten: Hauptmenü.\nIn jeder Ansicht dieselbe Funktion.",
-      "Kurz: zurück; im Chat: löschen.\nHalten >2 s: Start. Entwurf bleibt."};
+      "Kurz: zurück; im Chat: löschen.\nHalten 0,8 s: zurück. Entwurf bleibt."};
     panel(12, 32, 456, 157, app_.helpPage % 2 ? p.b : p.a, 22);
     label(26, 48, 425, tr(titles[app_.helpPage]), 24, ink);
     label(26, 93, 425, tr(bodies[app_.helpPage]), 18, ink);
     for (size_t i = 0; i < 4; ++i) panel(26 + int(i)*24, 170, 16, 5, i == app_.helpPage ? ink : p.bg, 2);
     panel(12, 198, 204, 24, p.a, 12);
-    label(22, 201, 184, tr("Klick: ") + tr(app_.helpPage == 3 ? "Los geht's" : "Weiter"), 14, ink);
-    label(228, 201, 246, app_.notice.empty() ? tr("Zurück") : app_.notice, 14, p.fg);
+    label(22, 201, 184, tr(app_.helpPage == 3 ? "Los geht's" : "Weiter"), 14, ink);
+    label(228, 201, 246, app_.notice, 14, p.fg);
     return;
   }
   if (app_.screen == Screen::Map && app_.mapFullscreen && !app_.menuOpen && !app_.mapMenuOpen && !app_.waypointNaming && !app_.waypointList) {
     drawMap(0, 0, 480, 222, p.b, ink, p.a);
     panel(10, 8, 460, 25, p.bg, 12);
     label(22, 13, 436, app_.mapCaption + " / Z" + std::to_string(app_.mapZoom), 12, p.fg);
-    panel(10, 190, 460, 25, p.bg, 12);
-    label(22, 195, 436, tr("Zurück: Vollbild verlassen"), 14, p.fg);
     return;
   }
   const std::string names[] = {tr("CHATS"),  tr("KONTAKTE"),      tr("RADAR"),     tr("KARTE"),
                                 tr("SIGNAL"), tr("EINSTELLUNGEN"), tr("NACHRICHT"), tr("GESPERRT"), "MESHCATOR"};
-  label(12, 3, 230,
+  label(12, 3, 220,
         std::string(names[static_cast<int>(app_.screen)]) +
             (app_.status.simulation ? " / DEMO" : ""),
         14, p.fg);
@@ -162,55 +191,60 @@ void View::render() {
     if (tm)
       std::strftime(clock, sizeof clock, "%H:%M", tm);
   }
-  label(254, 3, 220,
+  label(236, 3, 238,
         std::string(clock) + "  " + (app_.status.fix ? "GPS" : "--") + "  " +
-            (app_.status.battery < 0 ? "--" : std::to_string(app_.status.battery)) + "%",
+            (app_.status.battery < 0 ? "--" : std::to_string(app_.status.battery)) + "%" + (app_.status.usbPowered ? (app_.status.charging ? " USB+" : " USB") : ""),
         16, p.fg);
   auto screen = app_.screen;
+  const uint32_t iconColor = app_.settings.theme==Theme::Orange ? 0x235E5B : app_.settings.theme==Theme::Bands ? 0x355478 : 0x543178;
   if(app_.menuOpen||app_.mapMenuOpen||app_.contextOpen||app_.notificationMenu||app_.utility!=Utility::None||app_.waypointNaming||app_.waypointList){
     // Opaque overlays replace the content: do not draw expensive hidden views.
   } else if(screen==Screen::Dashboard){
-    const char *titles[]={"Gespraeche","Kontakte","Radar","Karte","Signal","Einstellungen"};
-    unsigned unread=0;for(auto &chat:app_.chats)unread+=chat.unread;
-    const std::string values[]={std::to_string(unread)+tr(" NEU"),std::to_string(app_.nodes.size())+" nodes",app_.status.fix?"GPS":"GPS --",app_.status.fix?number(app_.status.position.lat,3):"Natural Earth",app_.noise.empty()?"--":std::to_string(app_.noise.back())+" dBm",app_.settings.setupComplete?tr("Bestätigt"):tr("Senden gesperrt")};
+    const char *titles[]={"Gespräche","Kontakte","Radar","Karte","Signal","Einstellungen"};
     for(size_t i=0;i<6;++i){
-      int x=12+int(i%3)*156,y=29+int(i/3)*84;auto color=i==app_.selected?p.a:p.b;
-      panel(x,y,148,78,color,18);
-      label(x+10,y+11,128,std::string(i==app_.selected?"> ":"")+tr(titles[i]),16,ink);
-      label(x+10,y+44,128,values[i],14,ink);
+      int x=12+int(i%3)*156,y=29+int(i/3)*96;auto color=i==app_.selected?p.a:p.b;
+      panel(x,y,148,88,color,18);
+      menuIcon(x+54,y+24,i,iconColor);
+      if(i<2)unreadBadge(x+112,y+6,app_.unreadBadgeCount(i==0),color);
+      if(i==app_.selected){label(x+4,y+71,140,tr(titles[i]),12,ink);lv_obj_set_style_text_align(lv_obj_get_child(root_,-1),LV_TEXT_ALIGN_CENTER,0);}
     }
   } else if (screen == Screen::Chats) {
-    label(12, 27, 300, tr("Gespraeche"), 24, p.fg);
     auto visible=app_.visibleChats();
-    const size_t begin = (app_.selected / 3) * 3;
-    for (size_t j = begin; j < std::min(begin + 3, visible.size()+1); ++j) {
-      if(j==visible.size()){int x=12+int(j-begin)*156;panel(x,60,148,137,j==app_.selected?0xFFAA5C:0x9BB9E7);label(x+10,73,127,tr("Verwalten"),18,ink);label(x+10,112,127,tr("Filter / Neu / Import"),14,ink);continue;}
-      auto &c = app_.chats[visible[j]];
-      int x = 12 + static_cast<int>(j - begin) * 156;
-      auto col = j == app_.selected ? 0xFFAA5Cu : 0x9BB9E7u;
-      panel(x, 60, 148, 137, col);
-      label(x + 10, 70, 127,
-            c.unread    ? std::to_string(c.unread) + tr(" NEU")
-            : c.channel ? tr("KANAL")
-                        : tr("DIREKT"),
-            12, ink);
-      label(x + 10, 90, 127, (app_.notificationMode(c.id)==0?"[M] ":"")+c.name, 18, ink);
-      std::string preview = tr("Noch keine Nachricht");
-      for (auto m = app_.messages.rbegin(); m != app_.messages.rend(); ++m)
-        if (m->chat == c.id) {
-          preview = m->text;
-          break;
-        }
-      label(x + 10, 120, 127, preview.substr(0, 38), 12, ink);
-      if (j == app_.selected) {
-        panel(x + 77, 174, 61, 18, ink, 9);
-        label(x + 84, 177, 52, tr("FOKUS"), 10, col);
+    const size_t begin = (app_.selected / 2) * 2;
+    for (size_t j = begin; j < std::min(begin + 2, visible.size()+1); ++j) {
+      int y=29+int(j-begin)*96;
+      auto col=j==app_.selected?0xFFAA5Cu:0x9BB9E7u;
+      panel(12,y,456,88,col,18);
+      if(j==visible.size()){
+        label(24,y+12,432,tr("Verwalten"),18,ink);
+        label(24,y+62,432,tr("Filter / Neu / Import"),14,ink);
+        continue;
       }
+      auto &c=app_.chats[visible[j]];
+      // Full names get up to three lines. At most 64 UTF-8 bytes per stored name.
+      const auto name=(app_.notificationMode(c.id)==0?"[M] ":"")+c.name;
+      const int nameWidth=c.unread?390:432;
+      lv_point_t extent;lv_text_get_size(&extent,name.c_str(),font(16),0,0,nameWidth,LV_TEXT_FLAG_NONE);
+      label(24,y+6,nameWidth,name,extent.y>56?14:16,ink);
+      unreadBadge(432,y+6,c.unread,col);
+      std::string preview=tr("Noch keine Nachricht");
+      for(auto m=app_.messages.rbegin();m!=app_.messages.rend();++m)
+        if(m->chat==c.id){preview=m->text;break;}
+      label(24,y+64,324,preview,14,ink);
+      auto excerpt=lv_obj_get_child(root_,-1);
+      lv_obj_set_height(excerpt,20);lv_label_set_long_mode(excerpt,LV_LABEL_LONG_DOT);
+      label(354,y+65,102,tr(c.channel?"KANAL":"DIREKT"),12,ink);
+      lv_obj_set_style_text_align(lv_obj_get_child(root_,-1),LV_TEXT_ALIGN_RIGHT,0);
     }
   } else if (screen == Screen::Conversation) {
     auto c = std::find_if(app_.chats.begin(), app_.chats.end(),
                           [&](const Chat &v) { return v.id == app_.activeChat; });
-    label(12, 26, 455, c == app_.chats.end() ? tr("Chat") : c->name, 24, p.fg);
+    const auto chatName=c==app_.chats.end()?tr("Chat"):c->name;
+    lv_point_t nameSize;
+    lv_text_get_size(&nameSize,chatName.c_str(),font(18),0,0,455,LV_TEXT_FLAG_NONE);
+    int nameFont=18;
+    for(int size:{18,16,14,12}){nameFont=size;lv_text_get_size(&nameSize,chatName.c_str(),font(size),0,0,455,LV_TEXT_FLAG_NONE);if(nameSize.y<=42)break;}
+    label(12,25,455,chatName,nameFont,p.fg);
     std::vector<const Message *> ms;
     for (auto &m : app_.messages)
       if (m.chat == app_.activeChat)
@@ -218,33 +252,47 @@ void View::render() {
     if (!ms.empty()) {
       size_t offset = std::min(app_.historyOffset, ms.size() - 1);
       auto &m = *ms[ms.size() - 1 - offset];
-      panel(12, 59, 456, 98, m.own ? p.b : p.a, 16);
-      label(24, 66, 190,
-            (m.own ? tr("DU / ") : tr("EMPFANGEN / ")) + std::to_string(ms.size() - offset) + tr(" von ") +
-                std::to_string(ms.size()),
-            12, ink);
+      const auto color=m.own?p.b:p.a;
+      panel(12,70,456,122,color,16);
+      std::string sender=m.own?app_.settings.name:chatName,body=m.text;
+      if(!m.own&&c!=app_.chats.end()&&c->channel){
+        auto split=body.find(": ");
+        sender=tr("EMPFANGEN");
+        if(split!=std::string::npos&&split>0&&split<=31){sender=body.substr(0,split);body.erase(0,split+2);}
+      }
+      int senderFont=14;lv_point_t senderSize;
+      for(int size:{14,12,10}){senderFont=size;lv_text_get_size(&senderSize,emojiDisplayText(sender).c_str(),font(size),0,0,178,LV_TEXT_FLAG_NONE);if(senderSize.y<=20)break;}
+      const int senderHeight=std::max(20,int(senderSize.y));
+      panel(22,75,190,senderHeight+6,ink,7);
+      auto senderLabel=label(28,78,178,sender,senderFont,color);
+      lv_obj_set_height(senderLabel,senderHeight);lv_label_set_long_mode(senderLabel,LV_LABEL_LONG_WRAP);
+      const int bodyY=std::max(106,84+senderHeight),bodyHeight=169-bodyY;
       auto stamp=lv_label_create(root_);lv_label_set_text(stamp,messageTime(m.timestamp).c_str());
-      lv_obj_set_pos(stamp,220,64);lv_obj_set_size(stamp,236,18);
+      lv_obj_set_pos(stamp,220,75);lv_obj_set_size(stamp,236,18);
       lv_label_set_long_mode(stamp,LV_LABEL_LONG_CLIP);
       lv_obj_set_style_text_font(stamp,font(14),0);lv_obj_set_style_text_color(stamp,lv_color_hex(ink),0);
       lv_obj_set_style_text_align(stamp,LV_TEXT_ALIGN_RIGHT,0);
-      label(24, 83, 431, m.text, 14, ink);
-      label(24, 141, 431,
+      int bodyFont=14;lv_point_t bodySize;
+      for(int size:{14,12,10}){bodyFont=size;lv_text_get_size(&bodySize,emojiDisplayText(body).c_str(),font(size),0,0,431,LV_TEXT_FLAG_NONE);if(bodySize.y<=bodyHeight)break;}
+      auto bodyLabel=label(24,bodyY,431,body,bodyFont,ink);
+      lv_obj_set_height(bodyLabel,bodyHeight);lv_label_set_long_mode(bodyLabel,LV_LABEL_LONG_WRAP);
+      if(m.unread){panel(399,172,57,18,ink,8);label(405,173,47,tr("Neu"),12,color);}
+      label(24, 175, 365,
             m.delivery == Delivery::Delivered ? tr("ZUGESTELLT")
             : m.delivery == Delivery::Unconfirmed ? tr("NICHT BESTÄTIGT / ERNEUT SENDEN")
             : m.delivery == Delivery::Failed      ? tr("FEHLER / ENTWURF ERHALTEN")
             : m.delivery == Delivery::Queued    ? tr("IN WARTESCHLANGE / KEIN ACK")
             : m.delivery == Delivery::Simulated ? tr("SIMULIERT")
-                                                : tr("Rad: Verlauf"),
+                                                : tr("EMPFANGEN"),
             12, ink);
     }
-    panel(12, 165, 456, 35, p.c, 10);
-    label(22, 172, 438, app_.draft.empty() ? tr("Tippen ... (Enter sendet)") : app_.draft, 14, ink);
+    panel(12, 198, 456, 24, p.c, 10);
+    label(22, 201, 438, app_.draft.empty() ? tr("Nachricht") : app_.draft, 14, ink);
   } else if (screen == Screen::Contacts || screen == Screen::Radar) {
     bool radar = screen == Screen::Radar;
     int startX = radar ? 230 : 12, width = radar ? 238 : 456;
     if (radar) {
-      panel(12, 29, 206, 169, p.c, 20);
+      panel(12, 29, 206, 185, p.c, 20);
       for (int r : {23, 46, 66}) {
         auto o = lv_obj_create(root_);
         lv_obj_remove_style_all(o);
@@ -276,12 +324,12 @@ void View::render() {
         }
     }
     if (app_.nodes.empty())
-      label(startX, 55, width, tr("Keine Nodes gehoert"), 16, p.fg);
+      label(startX, 55, width, tr("Keine Nodes gehört"), 16, p.fg);
     size_t begin = app_.selected / 4 * 4;
     for (size_t i = begin; i < std::min(begin + 4, app_.nodes.size()); ++i) {
       auto &n = app_.nodes[i];
-      int y = 30 + static_cast<int>(i - begin) * 42;
-      panel(startX, y, width, 37, i == app_.selected ? p.a : p.b, 12);
+      int y = 30 + static_cast<int>(i - begin) * 47;
+      panel(startX, y, width, 42, i == app_.selected ? p.a : p.b, 12);
       label(startX + 10, y + 3, width - 20, std::string(n.favorite ? "* " : "") + n.name, 14, ink);
       label(startX + 10, y + 21, width - 20,
             (n.hasSnr ? number(n.snr, 1) + " dB" : "SNR --") + " / " +
@@ -289,7 +337,7 @@ void View::render() {
             12, ink);
     }
   } else if (screen == Screen::Signal) {
-    panel(12, 29, 136, 170, p.a, 20);
+    panel(12, 29, 136, 185, p.a, 20);
     label(24, 43, 115, tr("NOISE / dBm"), 12, ink);
     label(20, 68, 125, app_.noise.empty() ? "--" : std::to_string(app_.noise.back()), 36, ink);
     if (!app_.noise.empty()) {
@@ -298,7 +346,7 @@ void View::render() {
             "MIN " + std::to_string(*mm.first) + "\nMAX " + std::to_string(*mm.second), 12, ink);
     }
     label(24, 177, 115, app_.paused ? tr("PAUSIERT") : tr("LIVE / 1 Hz"), 12, ink);
-    panel(158, 29, 310, 170, p.b, 20);
+    panel(158, 29, 310, 185, p.b, 20);
     for (int y : {70, 118, 166})
       segment(206, y, 454, y, ink);
     label(169, 65, 40, "-90", 12, ink);
@@ -311,8 +359,8 @@ void View::render() {
     }
     label(207, 182, 245, tr("-60 s                         jetzt"), 12, ink);
   } else if (screen == Screen::Map && !app_.menuOpen && !app_.mapMenuOpen && !app_.waypointNaming && !app_.waypointList && app_.utility==Utility::None) {
-    drawMap(12, 29, 294, 170, p.b, ink, p.a);
-    panel(316, 29, 152, 170, p.a, 20);
+    drawMap(12, 29, 294, 185, p.b, ink, p.a);
+    panel(316, 29, 152, 185, p.a, 20);
     label(328, 44, 128, tr("ANSICHT"), 12, ink);
     label(328, 68, 128, "Zoom " + std::to_string(app_.mapZoom), 24, ink);
     label(328, 113, 128,
@@ -340,23 +388,22 @@ void View::render() {
       } else if (options.empty()) {
         panel(12, 70, 456, 74, p.a, 18);
         label(26, 94, 425, app_.editValue + "_", 24, ink);
-        label(12, 158, 456, app_.editField == SettingField::Setup ? tr("Funkkonfiguration bestätigen") : tr("Tippen: ersetzen / Del: löschen"), 16, p.fg);
       } else {
         int begin = app_.settingChoice / 3 * 3;
         for(int i=begin;i<std::min(begin+3,int(options.size()));++i){
-          int y=64+(i-begin)*43;
-          panel(12,y,456,39,i==app_.settingChoice?p.a:p.b,14);
+          int y=64+(i-begin)*50;
+          panel(12,y,456,45,i==app_.settingChoice?p.a:p.b,14);
           label(26,y+9,425,std::string(i==app_.settingChoice?"> ":"")+tr(options[i]),18,ink);
         }
       }
     } else {
-      const char *categories[]={"Sprache","Farbe","Funk / Region","Gerät / GPS","Bluetooth","Display","Karte","Kanäle / Filter","Benachrichtigungen","Einrichtung","Version","Hilfe"};
+      const char *categories[]={"Sprache","Farbe","Funk / Region","Gerät / GPS","Bluetooth","Display","Karte","Kanäle / Filter","Benachrichtigungen","Einrichtung","Info / Credits","Hilfe"};
       auto fields=settingFields(app_.settingsCategory);
       size_t count=app_.settingsCategory<0?12:app_.settingsCategory==7?2:fields.size();
       size_t begin=app_.selected/4*4;
       for(size_t i=begin;i<std::min(begin+4,count);++i){
-        int y=29+int(i-begin)*42;
-        panel(12,y,456,38,i==app_.selected?p.a:p.b,14);
+        int y=29+int(i-begin)*47;
+        panel(12,y,456,43,i==app_.selected?p.a:p.b,14);
         std::string text=app_.settingsCategory==7?tr(i==0?"Gesprächsfilter":"Kanal erstellen"):app_.settingsCategory<0?tr(categories[i]):tr(settingLabel(fields[i]))+": "+tr(settingValue(app_.settings,fields[i]));
         label(26,y+9,425,std::string(i==app_.selected?"> ":"")+text,18,ink);
       }
@@ -365,55 +412,55 @@ void View::render() {
     label(20, 45, 450, clock, 36, p.fg);
     panel(12, 112, 456, 85, p.a, 20);
     label(26, 129, 425, tr("GESPERRT"), 18, ink);
-    label(26, 165, 425, tr("Enter zum Entsperren"), 14, ink);
   }
   if(app_.channelCreating){
-    panel(0,24,480,173,p.bg,0);
+    panel(0,24,480,198,p.bg,0);
     label(12,29,456,tr(app_.channelEditing.empty()?"Kanal erstellen":"Kanal bearbeiten")+" / "+std::to_string(app_.channelStage+1)+"/4",24,p.fg);
     panel(12,64,456,128,p.a,18);
     if(app_.channelStage==0){
       label(26,83,425,std::string(app_.channelKind==0?"> ":"  ")+tr("Öffentlicher Hashtag"),18,ink);
       label(26,131,425,std::string(app_.channelKind==1?"> ":"  ")+tr("Privater Schlüssel"),18,ink);
     }else if(app_.channelStage==1){label(26,77,425,tr("Name"),16,ink);label(26,112,425,app_.channelName+"_",24,ink);}
-    else if(app_.channelStage==2){label(26,75,425,tr("128/256 Bit: Hex oder Base64"),16,ink);label(26,104,425,app_.channelSecret.substr(0,16)+"\n"+app_.channelSecret.substr(std::min(size_t(16),app_.channelSecret.size())),18,ink);label(26,166,425,tr("Tippen: ersetzen / Del: löschen"),14,ink);}
-    else {label(26,82,425,app_.channelName,24,ink);label(26,125,425,tr(app_.channelKind?"Privater Schlüssel":"Öffentlicher Hashtag"),18,ink);label(26,161,425,tr("Klick: Speichern"),16,ink);}
+    else if(app_.channelStage==2){label(26,75,425,tr("128/256 Bit: Hex oder Base64"),16,ink);label(26,104,425,app_.channelSecret.substr(0,16)+"\n"+app_.channelSecret.substr(std::min(size_t(16),app_.channelSecret.size())),18,ink);}
+    else {label(26,82,425,app_.channelName,24,ink);label(26,125,425,tr(app_.channelKind?"Privater Schlüssel":"Öffentlicher Hashtag"),18,ink);}
   }
   if (app_.menuOpen) {
-    panel(0, 24, 480, 178, p.bg, 0);
-    const std::string menu[] = {tr("Gespraeche"), tr("Kontakte"), tr("Radar"), tr("Karte"), tr("Signal"), tr("Einstellungen")};
+    panel(0, 24, 480, 198, p.bg, 0);
+    const std::string menu[] = {tr("Gespräche"), tr("Kontakte"), tr("Radar"), tr("Karte"), tr("Signal"), tr("Einstellungen")};
     for (size_t i = 0; i < 6; ++i) {
-      int x = 12 + (i % 3) * 156, y = 32 + (i / 3) * 82;
+      int x = 12 + (i % 3) * 156, y = 29 + (i / 3) * 96;
       bool focus = i == app_.menuSelected;
-      panel(x, y, 144, 72, focus ? p.a : p.b, 16);
-      label(x + 10, y + 12, 124, focus ? tr("> AUSWAHL") : std::to_string(i + 1), 12, ink);
-      label(x + 10, y + 35, 124, menu[i], 14, ink);
+      panel(x, y, 144, 88, focus ? p.a : p.b, 16);
+      menuIcon(x+52,y+24,i,iconColor);
+      if(i<2)unreadBadge(x+108,y+6,app_.unreadBadgeCount(i==0),focus?p.a:p.b);
+      if(focus){label(x+2,y+71,140,menu[i],12,ink);lv_obj_set_style_text_align(lv_obj_get_child(root_,-1),LV_TEXT_ALIGN_CENTER,0);}
     }
   }
   if (app_.mapMenuOpen) {
-    panel(12, 27, 456, 171, p.bg, 16);
-    const char *items[]={app_.mapFullscreen?"Vollbild verlassen":"Vollbild","Eigene Position","Kontakte anzeigen","Standort merken","Gemerkte Orte","Navigation beenden","Schliessen"};
+    panel(12, 27, 456, 187, p.bg, 16);
+    const char *items[]={app_.mapFullscreen?"Vollbild verlassen":"Vollbild","Eigene Position","Kontakte anzeigen","Standort merken","Gemerkte Orte","Navigation beenden","Schließen"};
     size_t begin=app_.mapMenuSelected/4*4;
     for(size_t i=begin;i<std::min(begin+4,size_t(7));++i){
-      int y=29+int(i-begin)*42;
-      panel(12,y,456,38,app_.mapMenuSelected==i?p.a:p.b,14);
+      int y=29+int(i-begin)*47;
+      panel(12,y,456,43,app_.mapMenuSelected==i?p.a:p.b,14);
       label(26,y+9,425,std::string(app_.mapMenuSelected==i?"> ":"")+tr(items[i])+(i==2?": "+tr(app_.settings.showContacts?"Ein":"Aus"):""),18,ink);
     }
   }
   if(app_.waypointNaming||app_.waypointList){
-    panel(12,27,456,171,p.bg,16);
+    panel(12,27,456,187,p.bg,16);
     label(24,32,430,tr(app_.waypointNaming?"Standort merken":"Gemerkte Orte"),24,p.fg);
     if(app_.waypointNaming){panel(12,76,456,72,p.a,18);label(26,98,425,app_.waypointName+"_",24,ink);}
     else if(app_.settings.waypoints.empty())label(24,92,430,tr("Keine Orte gespeichert"),18,p.fg);
     else {
       size_t begin=app_.waypointSelected/3*3;
-      for(size_t i=begin;i<std::min(begin+3,app_.settings.waypoints.size());++i){int y=65+int(i-begin)*43;panel(12,y,456,39,i==app_.waypointSelected?p.a:p.b,14);label(26,y+9,425,app_.settings.waypoints[i].name,18,ink);}
+      for(size_t i=begin;i<std::min(begin+3,app_.settings.waypoints.size());++i){int y=65+int(i-begin)*50;panel(12,y,456,45,i==app_.waypointSelected?p.a:p.b,14);label(26,y+9,425,app_.settings.waypoints[i].name,18,ink);}
     }
   }
   if (app_.contextOpen) {
     auto node = std::find_if(app_.nodes.begin(), app_.nodes.end(), [&](const Node &n) { return n.id == app_.contextId; });
     auto chat = std::find_if(app_.chats.begin(), app_.chats.end(), [&](const Chat &c) { return c.id == app_.contextId; });
     std::string title = node != app_.nodes.end() ? node->name : chat != app_.chats.end() ? chat->name : app_.contextId;
-    panel(0, 24, 480, 173, p.bg, 0);
+    panel(0, 24, 480, 198, p.bg, 0);
     label(12, 29, 456, title, 18, p.fg);
     if (app_.contextDetails) {
       panel(12, 54, 456, 140, p.a, 16);
@@ -460,28 +507,39 @@ void View::render() {
         case ContextAction::Remote:text=tr("Remote-Administration");break;
         case ContextAction::Filter:text=tr("Gesprächsfilter");break;
         case ContextAction::NewChannel:text=tr("Kanal erstellen");break;
-        case ContextAction::Close: text = tr("Schliessen"); break;
+        case ContextAction::Close: text = tr("Schließen"); break;
         }
-        int y = 54 + int(i - begin) * 35;
-        panel(12, y, 456, 32, i == app_.contextSelected ? p.a : p.b, 12);
+        int y = 54 + int(i - begin) * 40;
+        panel(12, y, 456, 36, i == app_.contextSelected ? p.a : p.b, 12);
         label(24, y + 7, 420, (i == app_.contextSelected ? "> " : "") + text, 16, ink);
       }
       label(410, 30, 62, std::to_string(app_.contextSelected+1) + "/" + std::to_string(actions.size()), 14, p.fg);
     }
   }
   if(app_.utility!=Utility::None){
-    auto u=app_.utility;panel(0,24,480,173,p.bg,0);
+    auto u=app_.utility;panel(0,24,480,198,p.bg,0);
     bool confirm=u==Utility::DeleteEntry||u==Utility::ClearHistory||u==Utility::TelemetryPolicy;
-    std::string title=u==Utility::NodeDetails?tr("Details"):u==Utility::QR?tr("Kontakt als QR-Code"):u==Utility::TelemetryPolicy?tr("Regeln für alle Kontakte?"):u==Utility::SetPath?tr("Pfad: Hex / leer = direkt"):u==Utility::Permissions?tr("Telemetrie freigeben"):confirm?tr("Löschen bestätigen"):u==Utility::Emoji?tr("Emoji einfügen"):u==Utility::RemoteMenu?tr("Remote-Administration"):u==Utility::RemoteLogin?tr("Passwort"):u==Utility::RemoteCommand?tr("Remote-Befehl"):u==Utility::Rename?tr("Umbenennen"):u==Utility::ChatMenu?tr("Gespräche verwalten"):u==Utility::Import?tr("Importieren"):u==Utility::Export?tr("Export / Schlüssel sichtbar"):tr("Antwort");
+    std::string title=u==Utility::About?tr("Info / Credits"):u==Utility::NodeDetails?tr("Details"):u==Utility::QR?tr("Kontakt als QR-Code"):u==Utility::TelemetryPolicy?tr("Regeln für alle Kontakte?"):u==Utility::SetPath?tr("Pfad: Hex / leer = direkt"):u==Utility::Permissions?tr("Telemetrie freigeben"):confirm?tr("Löschen bestätigen"):u==Utility::Emoji?tr("Emoji einfügen"):u==Utility::RemoteMenu?tr("Remote-Administration"):u==Utility::RemoteLogin?tr("Passwort"):u==Utility::RemoteCommand?tr("Remote-Befehl"):u==Utility::Rename?tr("Umbenennen"):u==Utility::ChatMenu?tr("Gespräche verwalten"):u==Utility::Import?tr("Importieren"):u==Utility::Export?tr("Export / Schlüssel sichtbar"):tr("Antwort");
     label(12,29,390,title,18,p.fg);
     std::vector<std::string> rows;
     if(confirm){rows={tr("Abbrechen"),tr(u==Utility::TelemetryPolicy?"Kontaktregeln aktivieren":"Löschen")};std::string target=app_.utilityTarget;for(auto&c:app_.chats)if(c.id==target)target=c.name;label(12,54,450,target,14,p.fg);}
     else if(u==Utility::Permissions){uint8_t bits=0;for(auto&n:app_.nodes)if(n.id==app_.utilityTarget)bits=n.permissions;const char* names[]={"Basis / Batterie","Position","Umweltsensoren"};for(int i=0;i<3;++i){int policy=(app_.telemetryPolicy()>>(i*2))&3;rows.push_back(std::string(bits&(1<<i)?"[+] ":"[-] ")+tr(names[i])+(policy==1?"":policy==2?" (ALL)":" (OFF)"));}rows.push_back(tr("Kontaktregeln aktivieren"));}
-    else if(u==Utility::Emoji)for(int i=0;i<emojiCount;++i)rows.push_back(std::string(emojis[i])+" "+tr(emojiNames[i]));
+
     else if(u==Utility::RemoteMenu)rows={tr("Anmelden"),tr("Geräteinfo abfragen"),tr("Status abfragen"),tr("Remote-Befehl"),tr("Funkparameter lesen"),tr("Sendeleistung lesen"),tr("Advert-Intervall lesen"),tr("Weiterleitung lesen"),tr("Name remote ändern"),tr("Sendeleistung ändern"),tr("Advert-Intervall ändern"),tr("Weiterleitung ändern")};
     else if(u==Utility::ChatMenu)rows={tr("Alle"),tr("Kanäle"),tr("Direktnachrichten"),tr("Kanal erstellen"),tr("Importieren")};
-    if(u==Utility::QR){panel(170,54,140,140,0xffffff,0);auto qr=lv_qrcode_create(root_);lv_qrcode_set_size(qr,124);lv_obj_set_pos(qr,178,62);lv_qrcode_set_dark_color(qr,lv_color_black());lv_qrcode_set_light_color(qr,lv_color_white());if(lv_qrcode_update(qr,app_.utilityText.data(),app_.utilityText.size())!=LV_RESULT_OK){lv_obj_delete(qr);label(12,65,456,tr("Aktion fehlgeschlagen"),16,p.fg);}}
-    else if(!rows.empty()){size_t begin=app_.utilityChoice/3*3;for(size_t i=begin;i<std::min(begin+3,rows.size());++i){int yy=(confirm?80:58)+int(i-begin)*40;panel(12,yy,456,36,i==app_.utilityChoice?p.a:p.b,12);label(24,yy+7,430,(i==app_.utilityChoice?"> ":"")+rows[i],16,ink);}label(415,31,60,std::to_string(app_.utilityChoice+1)+"/"+std::to_string(rows.size()),12,p.fg);}
+    if(u==Utility::Emoji){
+      constexpr size_t perPage=32;
+      size_t begin=app_.utilityChoice/perPage*perPage;
+      label(410,31,68,std::to_string(app_.utilityChoice+1)+"/"+std::to_string(emojiCount),12,p.fg);
+      for(size_t i=begin;i<std::min(begin+perPage,size_t(emojiCount));++i){
+        int x=12+int((i-begin)%8)*58,y=56+int((i-begin)/8)*40;
+        panel(x,y,50,35,i==app_.utilityChoice?p.a:p.b,9);
+        label(x,y+5,50,emojis[i],24,ink);
+        lv_obj_set_style_text_align(lv_obj_get_child(root_,-1),LV_TEXT_ALIGN_CENTER,0);
+      }
+    }
+    else if(u==Utility::QR){panel(170,54,140,140,0xffffff,0);auto qr=lv_qrcode_create(root_);lv_qrcode_set_size(qr,124);lv_obj_set_pos(qr,178,62);lv_qrcode_set_dark_color(qr,lv_color_black());lv_qrcode_set_light_color(qr,lv_color_white());if(lv_qrcode_update(qr,app_.utilityText.data(),app_.utilityText.size())!=LV_RESULT_OK){lv_obj_delete(qr);label(12,65,456,tr("Aktion fehlgeschlagen"),16,p.fg);}}
+    else if(!rows.empty()){size_t begin=app_.utilityChoice/3*3;for(size_t i=begin;i<std::min(begin+3,rows.size());++i){int yy=(confirm?80:58)+int(i-begin)*48;panel(12,yy,456,44,i==app_.utilityChoice?p.a:p.b,12);label(24,yy+7,430,(i==app_.utilityChoice?"> ":"")+rows[i],16,ink);}label(415,31,60,std::to_string(app_.utilityChoice+1)+"/"+std::to_string(rows.size()),12,p.fg);}
     else {
       bool input=u==Utility::SetPath||u==Utility::Import||u==Utility::RemoteCommand||u==Utility::Rename||u==Utility::RemoteLogin;
       std::string value=u==Utility::RemoteLogin?std::string(app_.utilityText.size(),'*'):app_.utilityText;
@@ -492,35 +550,16 @@ void View::render() {
     }
   }
   if(app_.notificationMenu){
-    panel(0,24,480,173,p.bg,0);
+    panel(0,24,480,198,p.bg,0);
     label(12,29,390,tr("Benachrichtigungen"),24,p.fg);
     label(414,34,60,std::to_string(app_.notificationChoice+1)+"/5",14,p.fg);
     const char *choices[]={"Wie global","Stumm","Ton","Vibration","Ton + Vibration"};
     int begin=app_.notificationChoice/3*3;
-    for(int i=begin;i<std::min(begin+3,5);++i){int y=64+(i-begin)*43;panel(12,y,456,39,i==app_.notificationChoice?p.a:p.b,14);label(26,y+9,425,std::string(i==app_.notificationChoice?"> ":"")+tr(choices[i]),18,ink);}
+    for(int i=begin;i<std::min(begin+3,5);++i){int y=64+(i-begin)*50;panel(12,y,456,45,i==app_.notificationChoice?p.a:p.b,14);label(26,y+9,425,std::string(i==app_.notificationChoice?"> ":"")+tr(choices[i]),18,ink);}
   }
-  std::string action = tr("Oeffnen");
-  if(app_.utility!=Utility::None)action=tr("Auswaehlen");
-  else if(app_.notificationMenu)action=tr("Speichern");
-  else if (app_.contextOpen) action = app_.contextDetails ? tr("Zurück") : tr("Auswaehlen");
-  else if (app_.menuOpen || app_.mapMenuOpen) action = tr("Auswaehlen");
-  else if (screen == Screen::Conversation) action = tr("Senden");
-  else if (screen == Screen::Signal) action = app_.paused ? tr("Fortsetzen") : tr("Pause");
-  else if (app_.channelCreating) action = app_.channelStage==3?tr("Speichern"):tr("Weiter");
-  else if (app_.waypointNaming) action = tr("Speichern");
-  else if (screen == Screen::Settings) action = app_.settingsEditing ? tr("Speichern") : tr("Auswaehlen");
-  else if (screen == Screen::Map) action = tr("Menue");
-  else if (screen == Screen::Lock) action = tr("Entsperren");
-  panel(0, 197, 480, 25, p.bg, 0);
-  panel(12, 198, 204, 24, p.a, 12);
-  label(22, 201, 184, (screen == Screen::Conversation && !app_.menuOpen && !app_.contextOpen && !app_.notificationMenu && app_.utility==Utility::None ? tr("Enter: ") : tr("Klick: ")) + action, 14, ink);
-  label(228, 201, 246, app_.utility==Utility::Export||app_.utility==Utility::RemoteOutput||app_.utility==Utility::NodeDetails ? tr("Rad: Seiten / Back: Zurück") : app_.utility!=Utility::None ? tr("Zurück: Abbrechen") : app_.notificationMenu ? tr("Zurück: Abbrechen") : app_.contextOpen ? tr("Rad: Wahl / Back: Zurück") : app_.settingsEditing && !app_.menuOpen ? tr("Zurück: Abbrechen") : app_.menuOpen ? tr("Rad: Wahl / Back: Zurück") :
-        screen == Screen::Conversation ? tr("Radklick: Chatmenü") :
-        screen == Screen::Map ? tr("Rad: Zoom") :
-        screen == Screen::Lock ? tr("Back halten: Start") : tr("Rad halten: Menü"), 14, p.fg);
   if (!app_.notice.empty()) {
-    panel(12, 153, 456, 42, p.d, 10);
-    label(22, 157, 436, app_.notice, 14, ink);
+    panel(12, 172, 456, 42, p.d, 10);
+    label(22, 178, 436, app_.notice, 14, ink);
   }
 }
 } // namespace mc

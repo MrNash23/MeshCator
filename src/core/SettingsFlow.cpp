@@ -1,4 +1,5 @@
 #include "App.h"
+#include "Credits.h"
 #include <algorithm>
 namespace mc {
 void App::beginSetting(SettingField field) {
@@ -44,7 +45,7 @@ bool App::handleSettingsKey(Key k){
    else if(selected==0)beginSetting(SettingField::Language);
    else if(selected==1)beginSetting(SettingField::Theme);
    else if(selected==9)beginSetup();
-   else if(selected==10)notice="MeshCator 0.3.8-dev";
+   else if(selected==10)utilityOpen(Utility::About,creditsText);
    else if(selected==11)openHelp();
    else {settingsCategory=int(selected);selected=0;}
   }

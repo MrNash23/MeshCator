@@ -1,15 +1,26 @@
 #include <algorithm>
 
 #include "core/App.h"
+#include "core/Credits.h"
+#include "core/Emoji.h"
 #include "core/BackGesture.h"
 #include "mesh/SimBackend.h"
 #include "ui/View.h"
 #include <SDL.h>
+#include <src/misc/lv_text_private.h>
 #include <chrono>
 #include <cstring>
 #include <ctime>
 #include <iostream>
 #include <vector>
+LV_FONT_DECLARE(meshcator_font_10);
+LV_FONT_DECLARE(meshcator_font_12);
+LV_FONT_DECLARE(meshcator_font_14);
+LV_FONT_DECLARE(meshcator_font_16);
+LV_FONT_DECLARE(meshcator_font_18);
+LV_FONT_DECLARE(meshcator_font_24);
+LV_FONT_DECLARE(meshcator_font_28);
+LV_FONT_DECLARE(meshcator_font_36);
 namespace {
 std::vector<uint16_t> pixels(480 * 222);
 void flush(lv_display_t *d, const lv_area_t *a, uint8_t *bytes) {
@@ -22,8 +33,9 @@ void flush(lv_display_t *d, const lv_area_t *a, uint8_t *bytes) {
 }
 } // namespace
 int main(int argc, char **argv) {
+  bool textPreview = false, nameLayoutTest = false, emojiTest = false;
   bool smoke = false, menu = false, splash = false, mapPerf=false;
-  int mapZoom = -1;
+  int mapZoom = -1, usbPreview = 0;
   std::string utilityPreview;
   std::string screenshot, settings = "meshcator-settings.txt";
   int view = 8, language = -1, helpPage = 0, category = -1, channelStep = -1, setupStep = -1;
@@ -31,7 +43,11 @@ int main(int argc, char **argv) {
   bool editSettings = false, fullscreenMap = false, context = false, help = false;
   for (int i = 1; i < argc; ++i) {
     std::string a = argv[i];
-    if(a=="--map-perf")mapPerf=true;
+    if(a=="--emoji-test")emojiTest=true;
+    else if(a=="--name-layout-test")nameLayoutTest=true;
+    else if(a=="--text-preview")textPreview=true;
+    else if(a=="--usb-power"&&i+1<argc)usbPreview=std::atoi(argv[++i]);
+    else if(a=="--map-perf")mapPerf=true;
     else if(a=="--utility"&&i+1<argc)utilityPreview=argv[++i];
     else if(a=="--notifications") notificationPreview=true;
     else if (a == "--settings-category" && i + 1 < argc) category=std::atoi(argv[++i]);
@@ -93,6 +109,8 @@ int main(int argc, char **argv) {
   mc::SimBackend backend(settings);
   mc::App app(backend);
   backend.seed(app);
+  if(textPreview){for(auto&c:app.chats)c.name="#Überregionale Gespräche / Montréal";for(auto&m:app.messages)m.text="Zoë: Grüße! Ça va? Cœur, Œuvre, ÿ, Ÿ. ¡Mañana! ¿Sí? ÄÖÜ äöü ß ẞ l’été";}
+  app.status.usbPowered=usbPreview>0;app.status.charging=usbPreview==2;
   if (language >= 0 && language < 4) app.settings.language = static_cast<mc::Language>(language);
   app.screen = static_cast<mc::Screen>(std::clamp(view, 0, 8));
   if (app.screen == mc::Screen::Conversation) app.open(0);
@@ -108,13 +126,42 @@ int main(int argc, char **argv) {
     if(utilityPreview=="node-menu")app.showContext();else app.action(utilityPreview=="node"?mc::ContextAction::Details:utilityPreview=="path"?mc::ContextAction::SetPath:utilityPreview=="permissions"?mc::ContextAction::Permissions:utilityPreview=="qr"?mc::ContextAction::QR:mc::ContextAction::Remote);
     utilityPreview.clear();
   }
-  if(!utilityPreview.empty()){app.open(0);app.contextId=app.activeChat;app.contextChannel=true;if(utilityPreview=="emoji")app.action(mc::ContextAction::Emoji);else if(utilityPreview=="delete")app.action(mc::ContextAction::DeleteEntry);else if(utilityPreview=="remote")app.action(mc::ContextAction::Remote);else if(utilityPreview=="manage")app.utilityOpen(mc::Utility::ChatMenu);else if(utilityPreview=="chat"){app.receive(app.activeChat,"Demo","🙂 ❤️ 👍 ✅",true);app.draft="Danke! 🙏";}}
+  if(!utilityPreview.empty()){app.open(0);app.contextId=app.activeChat;app.contextChannel=true;if(utilityPreview=="credits")app.utilityOpen(mc::Utility::About,mc::creditsText);else if(utilityPreview=="emoji")app.action(mc::ContextAction::Emoji);else if(utilityPreview=="delete")app.action(mc::ContextAction::DeleteEntry);else if(utilityPreview=="remote")app.action(mc::ContextAction::Remote);else if(utilityPreview=="manage")app.utilityOpen(mc::Utility::ChatMenu);else if(utilityPreview=="chat"){app.chats[0].name="📡 Base 🦊 🇩🇪";app.receive(app.activeChat,"🐺 Node","😀 😂 ❤️ 👍🏽 📡 🛰️ 🦊 🐺 🌍 🔋 🚀 🔥",true);app.draft="Danke! 🙏 ✅";}}
   if (context) app.key(mc::Key::Context);
   if (menu) app.key(mc::Key::Menu);
   if (editSettings && app.screen == mc::Screen::Settings) app.key(mc::Key::Confirm);
   if (help) { app.openHelp(); app.helpPage = helpPage; }
   else if (!smoke) app.startIntroduction();
   mc::View ui(app);
+  if(emojiTest){
+    for(auto f:{&meshcator_font_10,&meshcator_font_12,&meshcator_font_14,&meshcator_font_16,&meshcator_font_18,&meshcator_font_24,&meshcator_font_28,&meshcator_font_36}){
+      for(const auto text:mc::emojis){uint32_t pos=0;while(text[pos]){
+        uint32_t cp=lv_text_encoded_next(text,&pos);lv_font_glyph_dsc_t glyph{};
+        if(!lv_font_get_glyph_dsc(f,&glyph,cp,0)||glyph.is_placeholder){std::cerr<<"Missing emoji "<<cp<<"\n";return 2;}
+        if(cp!=0xfe0f && (!glyph.box_w||!glyph.box_h)){std::cerr<<"Empty emoji\n";return 2;}
+      }}
+      for(uint32_t cp:{0x200du,0xfe0eu,0xfe0fu,0x1f3fbu,0x1f3ffu,0xe007fu}){lv_font_glyph_dsc_t glyph{};
+        if(!lv_font_get_glyph_dsc(f,&glyph,cp,0)||glyph.is_placeholder||glyph.adv_w){std::cerr<<"Modifier is a visible box\n";return 2;}
+      }
+    }
+    std::cout<<"All picker emojis resolve through every UI font; modifiers have no boxes\n";SDL_Quit();return 0;
+  }
+  if(nameLayoutTest){
+    for(int lang=0;lang<4;++lang)for(const auto& name:std::vector<std::string>{"#Überregionale Gespräche / Montréal",std::string(31,'W'),std::string(64,'W')}){
+      app.settings.language=static_cast<mc::Language>(lang);app.chats[0].name=name;
+      for(unsigned unread:{0u,1u,100u})for(auto screen:{mc::Screen::Chats,mc::Screen::Conversation}){
+        app.open(0);app.chats[0].unread=unread;app.screen=screen;app.selected=0;app.notice.clear();app.changed();ui.render();
+        auto root=lv_screen_active();lv_obj_update_layout(root);bool found=false;
+        for(uint32_t i=0;i<lv_obj_get_child_count(root);++i){auto o=lv_obj_get_child(root,i);
+          if(lv_obj_check_type(o,&lv_label_class)&&name==lv_label_get_text(o)){
+            found=true;if(lv_label_get_long_mode(o)!=LV_LABEL_LONG_WRAP||lv_obj_get_height(o)>(screen==mc::Screen::Chats?56:42)){std::cerr<<"Full name overlaps content\n";return 2;}
+          }
+        }
+        if(!found){std::cerr<<"Name missing or shortened\n";return 2;}
+      }
+    }
+    std::cout<<"Full names fit in four languages, including 64 wide characters\n";SDL_Quit();return 0;
+  }
   if(mapPerf){
     auto check=[](bool ok,const char*msg){if(!ok){std::cerr<<msg<<"\n";std::exit(2);}};
     app.screen=mc::Screen::Map;app.mapZoom=6;app.changed();auto start=std::chrono::steady_clock::now();ui.render();auto first=std::chrono::steady_clock::now();
@@ -124,6 +171,18 @@ int main(int argc, char **argv) {
     app.mapMenuOpen=false;app.menuOpen=true;for(int i=0;i<100;++i){app.key(mc::Key::Next);ui.render();}check(ui.mapBuilds()==builds,"Global menu rebuilt hidden map");
     app.menuOpen=false;app.mapZoom++;app.changed();ui.render();check(ui.mapBuilds()==builds+1,"Zoom did not invalidate map");
     app.settings.showContacts=!app.settings.showContacts;app.changed();ui.render();check(ui.mapBuilds()==builds+2,"Contact visibility did not invalidate map");
+    struct MapBackend:mc::Backend {
+      int reads=0;
+      bool send(const mc::Chat&,const std::string&)override{return true;}
+      bool advert(bool)override{return true;}
+      bool saveSettings(const mc::Settings&)override{return true;}
+      bool readTile(int,int,int,std::vector<uint16_t>&p)override{++reads;p.assign(65536,0x1234);return true;}
+    } mb;
+    mc::App ma(mb);ma.screen=mc::Screen::Map;ma.settings.mapSource=1;ma.mapCenter={52.52,13.405,true};ma.mapZoom=12;mc::View mv(ma);
+    mv.render();check(mb.reads==1,"Expected one bounded tile load per frame");
+    ma.mapMenuOpen=true;ma.changed();mv.render();int paused=mb.reads;mv.render();check(mb.reads==paused,"Hidden map loaded tiles");
+    ma.mapMenuOpen=false;ma.changed();for(int i=0;i<8;++i)mv.render();check(mb.reads>1&&ma.mapCaption=="SD","Pending tiles require unrelated status refresh");
+    int cached=mb.reads;for(int i=0;i<20;++i)mv.render();check(mb.reads==cached,"Complete map reread tiles");
     std::cout<<"First map ms: "<<std::chrono::duration<double,std::milli>(first-start).count()<<"; 300 redraws: no redundant map builds; zoom/contacts invalidate correctly\n";SDL_Quit();return 0;
   }
   SDL_StartTextInput();
@@ -133,7 +192,7 @@ int main(int argc, char **argv) {
   auto processBack = [&]() {
     auto action = backGesture.update(backDown, SDL_GetTicks());
     if (action == mc::BackGesture::Action::Short) app.key(mc::Key::Delete);
-    else if (action == mc::BackGesture::Action::Home) app.key(mc::Key::Home);
+    else if (action == mc::BackGesture::Action::Back) app.key(mc::Key::Back);
   };
   uint32_t last = SDL_GetTicks(), sample = last;
   int frames = 0;

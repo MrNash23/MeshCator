@@ -53,8 +53,10 @@ int main(){
  x0=-10;y0=-20;x1=80;y1=-20;CHECK(!mc::clipMapLine(x0,y0,x1,y1,50,50));
  std::vector<uint8_t> bmp(54+256*768);auto put=[&](int p,uint32_t v){for(int i=0;i<4;++i)bmp[p+i]=(v>>(8*i))&255;};
  bmp[0]='B';bmp[1]='M';put(10,54);put(14,40);put(18,256);put(22,256);bmp[26]=1;bmp[28]=24;bmp[54+2]=255;
- std::vector<uint16_t> pixels;auto read=[&](uint32_t off,uint8_t*out,size_t n){if(off+n>bmp.size())return false;std::memcpy(out,bmp.data()+off,n);return true;};
+ int reads=0;std::vector<uint16_t> pixels;auto read=[&](uint32_t off,uint8_t*out,size_t n){++reads;if(off+n>bmp.size())return false;std::memcpy(out,bmp.data()+off,n);return true;};
  CHECK(mc::readBmpTile(read,pixels)&&pixels[255*256]==0xf800&&pixels[0]==0);
+ CHECK(reads==33);
+ put(22,uint32_t(-256));CHECK(mc::readBmpTile(read,pixels)&&pixels[0]==0xf800);
  bmp.resize(100);CHECK(!mc::readBmpTile(read,pixels));
  std::cout<<"Configuration, setup, waypoint, projection and tile checks passed\n";
 }

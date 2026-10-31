@@ -1,0 +1,50 @@
+{
+  "pellepl-spiffs.txt": {
+    "source": "https://raw.githubusercontent.com/pellepl/spiffs/0dbb3f71c5f6fae3747a9d935372773762baf852/LICENSE",
+    "sha256": "d19257540156a51ed50c2378e7159066415d8bbbe147779f8deb0d3e73f1b0a7"
+  },
+  "DaveGamble-cJSON.txt": {
+    "source": "https://raw.githubusercontent.com/DaveGamble/cJSON/87d8f0961a01bf09bef98ff89bae9fdec42181ee/LICENSE",
+    "sha256": "a36dda207c36db5818729c54e7ad4e8b0c6fba847491ba64f372c1a2037b6d5c"
+  },
+  "espressif-mbedtls.txt": {
+    "source": "https://raw.githubusercontent.com/espressif/mbedtls/2b8e772fc1cb0732cda3bae7d1e9d6f4cfaf63d9/LICENSE",
+    "sha256": "9b405ef4c89342f5eae1dd828882f931747f71001cfba7d114801039b52ad09b"
+  },
+  "espressif-esp-lwip.txt": {
+    "source": "https://raw.githubusercontent.com/espressif/esp-lwip/a45be9e438f6cf9c54ec150581819c3b95d5af6b/COPYING",
+    "sha256": "8fb15ebdb19eb669e1d37fcd8e57a44c477fcc0e93a9ab0d181760965f94d5ed"
+  },
+  "espressif-esp32-wifi-lib.txt": {
+    "source": "https://raw.githubusercontent.com/espressif/esp32-wifi-lib/f2aae4d44ec7908013066e69d29b9948846c335c/LICENSE",
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+  },
+  "espressif-esp32c3-bt-lib.txt": {
+    "source": "https://raw.githubusercontent.com/espressif/esp32c3-bt-lib/e5c0f7256ecf5b5f8eb28c1793051a6b88f95124/LICENSE",
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+  },
+  "espressif-esp-phy-lib.txt": {
+    "source": "https://raw.githubusercontent.com/espressif/esp-phy-lib/dcfdccf6cc2fc02d0886624b7998c890d1a19b28/LICENSE",
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+  },
+  "FreeRTOS.txt": {
+    "source": "https://raw.githubusercontent.com/espressif/esp-idf/v4.4.7/components/freertos/LICENSE.md",
+    "sha256": "508a77d2e7b51d98adeed32648ad124b7b30241a8e70b2e72c99f92d8e5874d1"
+  },
+  "FatFS.txt": {
+    "source": "https://raw.githubusercontent.com/espressif/esp-idf/v4.4.7/components/fatfs/src/ff.h",
+    "sha256": "81560b2499d6bd3dccb5412b2a146256f1bae0f1f711bf7188f38a5ae4beac27"
+  },
+  "TLSF.txt": {
+    "source": "https://raw.githubusercontent.com/espressif/esp-idf/v4.4.7/components/heap/heap_tlsf.c",
+    "sha256": "ed6fb03d1f60749069487729e2570f47042b1ec235375e0382f1a97757dc57f1"
+  },
+  "wpa-supplicant.txt": {
+    "source": "https://raw.githubusercontent.com/espressif/esp-idf/v4.4.7/components/wpa_supplicant/README",
+    "sha256": "17ccbcf4b17a910795292fb4a95f4742d2ecda37d06fcf20d60ffbd70cfbc609"
+  },
+  "Xtensa.txt": {
+    "source": "https://raw.githubusercontent.com/espressif/esp-idf/v4.4.7/components/xtensa/include/xtensa/xtruntime.h",
+    "sha256": "9608504c086bc96751ac459a8cbb8b26ae4e28802c00f3e3bf298020f3f9b04a"
+  }
+}

@@ -17,7 +17,9 @@ class View {
   std::map<int,std::vector<uint8_t>> worldCache_;
   void drawMap(int x, int y, int w, int h, uint32_t background, uint32_t coast, uint32_t accent);
   void panel(int, int, int, int, uint32_t, int radius = 16);
-  void label(int, int, int, const std::string &, int, uint32_t);
+  lv_obj_t* label(int, int, int, const std::string &, int, uint32_t);
+  void unreadBadge(int x,int y,unsigned count,uint32_t tileColor);
+  void menuIcon(int x,int y,size_t index,uint32_t color);
   void segment(int, int, int, int, uint32_t, int width = 1);
 
 public:

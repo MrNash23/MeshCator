@@ -46,12 +46,27 @@ bool validText(const std::string &s) {
   return visible;
 }
 void eraseUtf8(std::string &s) {
-  if (s.empty())
-    return;
-  size_t i = s.size() - 1;
-  while (i > 0 && (static_cast<unsigned char>(s[i]) & 0xC0) == 0x80)
-    --i;
-  s.resize(i);
+  auto last=[&](size_t &start) -> uint32_t {
+    if(s.empty()){start=0;return 0;}
+    start=s.size()-1;
+    while(start && (static_cast<unsigned char>(s[start])&0xc0)==0x80)--start;
+    auto c=static_cast<unsigned char>(s[start]);
+    uint32_t cp=c<128?c:c&((c&0xe0)==0xc0?31:(c&0xf0)==0xe0?15:7);
+    for(size_t j=start+1;j<s.size();++j)cp=(cp<<6)|(static_cast<unsigned char>(s[j])&63);
+    return cp;
+  };
+  bool join=false;uint32_t removed=0;
+  do {
+    if(s.empty())break;
+    size_t start;removed=last(start);s.resize(start);
+    bool modifier=removed==0xfe0e||removed==0xfe0f||(removed>=0x1f3fb&&removed<=0x1f3ff)||
+      (removed>=0x300&&removed<=0x36f)||(removed>=0xe0020&&removed<=0xe007f);
+    if(modifier||removed==0x200d){join=true;continue;}
+    size_t previous;auto cp=last(previous);
+    join=cp==0x200d;
+    if(join)s.resize(previous);
+    else if(removed>=0x1f1e6&&removed<=0x1f1ff&&cp>=0x1f1e6&&cp<=0x1f1ff)s.resize(previous);
+  } while(join);
 }
 size_t App::itemCount() const {
   if(screen==Screen::Dashboard)return 6;
@@ -66,21 +81,29 @@ void App::persist() {
     notice = translate(settings.language, "Einstellungen nicht gespeichert");
   changed();
 }
+unsigned App::unreadBadgeCount(bool channel) const {
+  unsigned count=0;
+  for(const auto& c:chats)if(c.channel==channel)count+=std::min(c.unread,100-count);
+  return count; // 100 is rendered as 99+; saturation also prevents integer overflow
+}
 void App::open(size_t i) {
   if (i >= chats.size())
     return;
   if (!activeChat.empty())
     drafts_[activeChat] = draft;
   if (screen != Screen::Conversation) { returnScreen = screen; returnSelected = selected; }
+  readCurrentMessage();
   activeChat = chats[i].id;
   draft = drafts_[activeChat];
-  chats[i].unread = 0;
   scheduleArchive();
   screen = Screen::Conversation;
   historyOffset = 0;
+  size_t offset=0;
+  for(auto m=messages.rbegin();m!=messages.rend();++m)if(m->chat==activeChat){if(m->unread)historyOffset=offset;++offset;}
   changed();
 }
 bool App::type(const std::string &s) {
+  if(s.size()==1&&panMap(s[0]))return true;
   if(utility!=Utility::None){if(utility!=Utility::Import&&utility!=Utility::Rename&&utility!=Utility::RemoteLogin&&utility!=Utility::RemoteCommand&&utility!=Utility::SetPath)return false;size_t cap=utility==Utility::SetPath?130:utility==Utility::Import?600:utility==Utility::Rename?31:120;if(utilityText.size()+s.size()>cap)return false;for(unsigned char c:s)if(c<32||c==127)return false;utilityText+=s;changed();return true;}
 
   if(channelCreating&&!menuOpen){
@@ -112,10 +135,11 @@ bool App::type(const std::string &s) {
   return true;
 }
 bool App::send() {
+  readCurrentMessage();
   if(activeChat.rfind("archive:",0)==0){notice=translate(settings.language,"Archiv: nur lesen");changed();return false;}
   if (!settings.setupComplete) { notice=translate(settings.language,"Senden gesperrt");changed();return false; }
   if (!validText(draft)) {
-    notice = translate(settings.language, "Leere oder ungueltige Nachricht");
+    notice = translate(settings.language, "Leere oder ungültige Nachricht");
     changed();
     return false;
   }
@@ -134,9 +158,10 @@ bool App::send() {
        status.epoch,result.ack,result.timeout?clockMs+result.timeout:0});
   while (messages.size() > MaxMessages)
     messages.pop_front();
+  recountUnread();
   if (ok) {
     draft.clear();
-    notice = status.simulation ? translate(settings.language, "Simuliert / kein Funk") : translate(settings.language, "An Funkwarteschlange uebergeben");
+    notice = status.simulation ? translate(settings.language, "Simuliert / kein Funk") : translate(settings.language, "An Funkwarteschlange übergeben");
   } else
     notice = translate(settings.language, "Senden fehlgeschlagen / Entwurf erhalten");
   if(!backend_.appendMessageLog(*it,messages.back()))notice=translate(settings.language,"SD-Archiv nicht gespeichert");
@@ -159,16 +184,18 @@ void App::receive(const std::string &id, const std::string &name, const std::str
   const bool wasAsleep=!backend_.displayAwake();
   bool reading=!wasAsleep&&screen==Screen::Conversation&&activeChat==id&&!menuOpen&&!contextOpen&&!helpOpen&&!notificationMenu;
   if(utility!=Utility::None)reading=false;
-  if(!reading)++c->unread;
+  if(reading&&historyOffset==0)readCurrentMessage();
+  if(screen==Screen::Conversation&&activeChat==id&&(!reading||historyOffset>0))++historyOffset;
   int alertMode=notificationMode(id);
   if(!reading&&alertMode)backend_.notifyReceived(alertMode&1,alertMode&2,settings.notificationWake,channel);
-  messages.push_back({id, text, false, Delivery::Received, timestamp ? timestamp : status.epoch});
+  messages.push_back({id, text, false, Delivery::Received, timestamp ? timestamp : status.epoch,0,0,true});
   while (messages.size() > MaxMessages)
     messages.pop_front();
+  recountUnread();
   if(wasAsleep&&alertMode&&settings.notificationWake&&screen!=Screen::Lock){
     size_t index=static_cast<size_t>(c-chats.begin());
     key(Key::Home); // close overlays and preserve the current message draft
-    open(index);historyOffset=0;
+    open(index);
   }
   if(!backend_.appendMessageLog(logChat,messages.back()))notice=translate(settings.language,"SD-Archiv nicht gespeichert");
   scheduleArchive();saveArchive();
@@ -248,6 +275,7 @@ void App::startIntroduction() {
   else if (settings.helpVersion < 1) openHelp(true);
 }
 void App::key(Key k) {
+  if(k==Key::Next||k==Key::Previous||k==Key::Back||k==Key::Home||k==Key::Menu||k==Key::Context||k==Key::Confirm||k==Key::Enter)readCurrentMessage();
   if(handleUtility(k))return;
   if (handleNotificationKey(k) || handleChannelKey(k) || handleSettingsKey(k) || handleMapKey(k)) return;
   if (k == Key::Delete) {

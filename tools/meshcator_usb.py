@@ -42,7 +42,7 @@ def save(path,data):
  with open(path,'xb') as f:os.chmod(path,0o600);f.write(data)
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--port',required=True)
- sub=p.add_subparsers(dest='cmd',required=True);sub.add_parser('info')
+ sub=p.add_subparsers(dest='cmd',required=True);sub.add_parser('info');h=sub.add_parser('haptics');h.add_argument('--test',action='store_true',help='Play one 750-ms motor test pulse')
  for cmd in ['get','put']:
   a=sub.add_parser(cmd);a.add_argument('resource');a.add_argument('file',type=Path)
  for cmd in ['backup','restore']:
@@ -53,6 +53,7 @@ def main():
  with serial.Serial(args.port,115200,timeout=1) as port:
   c=Client(port)
   if args.cmd=='info':print(c.rpc(0).decode())
+  elif args.cmd=='haptics':print(c.rpc(8 if args.test else 7).decode())
   elif args.cmd=='set':
    fields={'theme':(1,0),'language':(1,1),'setup':(1,3),'frequency':(2,0),'bandwidth':(2,1),'sf':(2,2),'cr':(2,3),'power':(2,4),'hash_bytes':(2,5),'forwarding':(3,0),'gps':(3,1),'share_location':(3,2),'bluetooth':(3,3),'brightness':(3,4),'timeout':(3,5),'map_source':(3,6),'show_contacts':(3,7),'name':(4,None),'bluetooth_name':(5,None),'pin':(6,None),'mute':(-1,1),'alert_mode':(-1,2),'volume':(-1,3),'wake':(-1,4)}
    if args.field not in fields:raise ValueError('Fields: '+', '.join(fields))

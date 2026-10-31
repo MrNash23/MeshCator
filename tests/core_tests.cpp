@@ -46,7 +46,7 @@ int main() {
   a.receive("one", "One", "Hallo", false);
   CHECK(a.chats[0].unread == 1);
   a.open(0);
-  CHECK(a.chats[0].unread == 0);
+  CHECK(a.chats[0].unread == 1);
   CHECK(a.type("Grüße"));
   b.accept = false;
   CHECK(!a.send());
@@ -57,7 +57,7 @@ int main() {
   CHECK(a.draft.empty());
   CHECK(a.messages.back().delivery == mc::Delivery::Queued);
   a.receive("one", "One", "Noch da?", false);
-  CHECK(a.chats[0].unread == 0);
+  CHECK(a.chats[0].unread == 1);
   for (size_t i = 0; i < mc::MaxMessages + 8; ++i)
     a.receive("one", "One", "Test", false);
   CHECK(a.messages.size() == mc::MaxMessages);
@@ -185,13 +185,24 @@ int main() {
   CHECK(gesture.update(true, 100) == Gesture::None);
   CHECK(gesture.update(false, 180) == Gesture::Short);
   CHECK(gesture.update(true, 200) == Gesture::None);
-  CHECK(gesture.update(true, 2200) == Gesture::None);
-  CHECK(gesture.update(true, 2201) == Gesture::Home);
-  CHECK(gesture.update(true, 2300) == Gesture::None);
-  CHECK(gesture.update(false, 2400) == Gesture::None);
+  CHECK(gesture.update(true, 999) == Gesture::None);
+  CHECK(gesture.update(true, 1000) == Gesture::Back);
+  CHECK(gesture.update(true, 1100) == Gesture::None);
+  CHECK(gesture.update(false, 1200) == Gesture::None);
   CHECK(gesture.update(true, 2500) == Gesture::None);
-  CHECK(gesture.update(false, 4501) == Gesture::Home);
+  CHECK(gesture.update(false, 3300) == Gesture::Back);
+  // A held delete returns to the conversation's origin, preserving its draft.
+  a.screen = mc::Screen::Chats;
+  a.selected = 0;
   a.open(0);
+  a.draft = "Entwurf Grüße";
+  mc::BackGesture heldBack;
+  CHECK(heldBack.update(true, 5000) == Gesture::None);
+  if (heldBack.update(true, 5800) == Gesture::Back) a.key(mc::Key::Back);
+  CHECK(a.screen == mc::Screen::Chats && a.selected == 0);
+  CHECK(heldBack.update(false, 5900) == Gesture::None);
+  a.open(0);
+  CHECK(a.draft == "Entwurf Grüße");
   a.draft = "Grüße";
   a.key(mc::Key::Delete);
   CHECK(a.draft == "Grüß" && a.screen == mc::Screen::Conversation);

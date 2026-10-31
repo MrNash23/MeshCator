@@ -1,4 +1,6 @@
 #include "core/App.h"
+#include "core/Emoji.h"
+#include "core/Credits.h"
 #include <iostream>
 #include <algorithm>
 #define CHECK(x) do{if(!(x)){std::cerr<<"FAIL "<<__LINE__<<": "<<#x<<'\n';return 1;}}while(false)
@@ -14,6 +16,12 @@ int main(){B b;mc::App a(b);a.settings.setupComplete=true;a.receive("alice","Ali
  a.action(mc::ContextAction::DeleteEntry);a.key(mc::Key::Confirm);CHECK(b.removed==0&&a.chats.size()==1);
  a.action(mc::ContextAction::DeleteEntry);a.key(mc::Key::Next);b.accept=false;a.key(mc::Key::Enter);CHECK(a.chats.size()==1&&a.utility==mc::Utility::DeleteEntry);b.accept=true;a.key(mc::Key::Enter);CHECK(b.removed==1&&a.chats.empty()&&a.messages.empty());
  a.receive("alice","Alice","new",false);a.open(0);a.action(mc::ContextAction::Emoji);a.key(mc::Key::Confirm);CHECK(a.draft=="🙂");
+ for(int i=0;i<mc::emojiCount;++i){a.draft.clear();a.action(mc::ContextAction::Emoji);for(int j=0;j<i;++j)a.key(mc::Key::Next);a.key(mc::Key::Confirm);CHECK(a.draft==mc::emojis[i]);a.key(mc::Key::Delete);CHECK(a.draft.empty());}
+ a.draft=std::string(149,'x');a.action(mc::ContextAction::Emoji);a.key(mc::Key::Confirm);CHECK(a.utility==mc::Utility::Emoji&&a.draft.size()==149);a.key(mc::Key::Back);
+ for(const auto& text:{"👍🏽","❤️","👩‍💻","🇩🇪","é"}){std::string value="a"+std::string(text);mc::eraseUtf8(value);CHECK(value=="a");}
+ CHECK(mc::emojiDisplayText("📡 🇩🇪 Node 🇫🇷")=="📡 [DE] Node [FR]");
+ a.key(mc::Key::Home);a.screen=mc::Screen::Settings;a.settingsCategory=-1;a.selected=10;a.key(mc::Key::Confirm);CHECK(a.utility==mc::Utility::About&&a.utilityText.find("MicroNMEA")!=std::string::npos&&a.utilityText.find("Noto Emoji")!=std::string::npos);a.key(mc::Key::Next);CHECK(a.utilityChoice==1);a.key(mc::Key::Back);CHECK(a.screen==mc::Screen::Settings&&a.utility==mc::Utility::None);
+ a.open(0);a.contextId="alice";
  a.action(mc::ContextAction::Remote);a.key(mc::Key::Confirm);CHECK(a.utility==mc::Utility::RemoteLogin);a.type("secret");a.key(mc::Key::Enter);CHECK(b.command=="secret"&&a.utilityText.find("secret")==std::string::npos&&b.remoteCalls==1);
  a.remoteReply("wrong","should ignore");CHECK(a.remoteDeadline!=0);a.tick(31000);CHECK(a.remoteDeadline==0&&a.utility==mc::Utility::RemoteOutput);
  a.key(mc::Key::Home);CHECK(a.screen==mc::Screen::Dashboard&&a.utility==mc::Utility::None);

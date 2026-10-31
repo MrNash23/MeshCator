@@ -1,0 +1,461 @@
+[
+  {
+    "name": "MeshCator",
+    "version": "0.3.25-dev",
+    "author": "MeshCator contributors",
+    "license": "MIT",
+    "scope": "firmware",
+    "notice": "MeshCator.txt",
+    "source": "https://github.com/MrNash23/MeshCoder"
+  },
+  {
+    "name": "MeshCore / Pager port",
+    "version": "ed61285",
+    "author": "Scott Powell; dcooper94; contributors",
+    "license": "MIT",
+    "scope": "firmware",
+    "notice": "MeshCore---Pager-port.txt",
+    "source": "https://github.com/dcooper94/meshcore-lilygo-pager-SX1262"
+  },
+  {
+    "name": "RadioLib",
+    "version": "7.7.1",
+    "author": "Jan Gromes",
+    "license": "MIT",
+    "scope": "build dependency",
+    "notice": "RadioLib.txt",
+    "source": "https://github.com/jgromes/RadioLib"
+  },
+  {
+    "name": "RTClib",
+    "version": "2.1.4",
+    "author": "Adafruit Industries",
+    "license": "MIT",
+    "scope": "build dependency",
+    "notice": "RTClib.txt",
+    "source": "https://github.com/adafruit/RTClib"
+  },
+  {
+    "name": "Melopero RV3028",
+    "version": "1.2.0",
+    "author": "Melopero Electronics",
+    "license": "MIT",
+    "scope": "build dependency",
+    "notice": "Melopero-RV3028.txt",
+    "source": "https://github.com/melopero/Melopero_RV-3028_Arduino_Library"
+  },
+  {
+    "name": "CayenneLPP",
+    "version": "1.6.1",
+    "author": "Electronic Cats / myDevices",
+    "license": "MIT",
+    "scope": "build dependency",
+    "notice": "CayenneLPP.txt",
+    "source": "https://github.com/ElectronicCats/CayenneLPP"
+  },
+  {
+    "name": "MicroNMEA",
+    "version": "2.0.6",
+    "author": "Steve Marple",
+    "license": "LGPL-2.1",
+    "scope": "build dependency",
+    "notice": "MicroNMEA.txt",
+    "source": "https://github.com/stevemarple/MicroNMEA"
+  },
+  {
+    "name": "LovyanGFX",
+    "version": "1.2.7",
+    "author": "lovyan03, Bodmer, Adafruit",
+    "license": "MIT / BSD-2-Clause",
+    "scope": "build dependency",
+    "notice": "LovyanGFX.txt",
+    "source": "https://github.com/lovyan03/LovyanGFX"
+  },
+  {
+    "name": "Adafruit TCA8418",
+    "version": "1.0.2",
+    "author": "Limor Fried / Adafruit",
+    "license": "BSD-3-Clause",
+    "scope": "build dependency",
+    "notice": "Adafruit-TCA8418.txt",
+    "source": "https://github.com/adafruit/Adafruit_TCA8418"
+  },
+  {
+    "name": "Adafruit DRV2605 Library",
+    "version": "1.2.4",
+    "author": "Adafruit Industries",
+    "license": "MIT",
+    "scope": "build dependency",
+    "notice": "Adafruit-DRV2605-Library.txt",
+    "source": "https://github.com/adafruit/Adafruit_DRV2605_Library"
+  },
+  {
+    "name": "Adafruit BusIO",
+    "version": "1.17.4",
+    "author": "Adafruit Industries",
+    "license": "MIT",
+    "scope": "build dependency",
+    "notice": "Adafruit-BusIO.txt",
+    "source": "https://github.com/adafruit/Adafruit_BusIO"
+  },
+  {
+    "name": "base64",
+    "version": "1.4.0",
+    "author": "Densaugeo",
+    "license": "MIT",
+    "scope": "build dependency",
+    "notice": "base64.txt",
+    "source": "https://github.com/Densaugeo/base64_arduino"
+  },
+  {
+    "name": "lvgl",
+    "version": "9.2.2",
+    "author": "LVGL Kft and contributors",
+    "license": "MIT",
+    "scope": "build dependency",
+    "notice": "lvgl.txt",
+    "source": "https://lvgl.io"
+  },
+  {
+    "name": "Adafruit GFX Library",
+    "version": "1.13.0",
+    "author": "Adafruit Industries",
+    "license": "BSD-2-Clause",
+    "scope": "build dependency",
+    "notice": "Adafruit-GFX-Library.txt",
+    "source": "https://github.com/adafruit/Adafruit-GFX-Library"
+  },
+  {
+    "name": "Adafruit SH110X",
+    "version": "2.1.15",
+    "author": "Adafruit Industries",
+    "license": "BSD-3-Clause",
+    "scope": "build dependency",
+    "notice": "Adafruit-SH110X.txt",
+    "source": "https://github.com/adafruit/Adafruit_SH110X"
+  },
+  {
+    "name": "ArduinoJson",
+    "version": "7.4.3",
+    "author": "Benoit Blanchon",
+    "license": "MIT",
+    "scope": "build dependency",
+    "notice": "ArduinoJson.txt",
+    "source": "https://arduinojson.org/?utm_source=meta&utm_medium=library.properties"
+  },
+  {
+    "name": "Crypto",
+    "version": "0.4.0",
+    "author": "Rhys Weatherley / Southern Storm",
+    "license": "MIT",
+    "scope": "firmware",
+    "notice": "Crypto-source-notices.txt",
+    "source": "https://github.com/rweather/arduinolibs"
+  },
+  {
+    "name": "ed25519",
+    "version": "vendored",
+    "author": "Orson Peters",
+    "license": "Zlib",
+    "scope": "firmware",
+    "notice": "ed25519.txt",
+    "source": ""
+  },
+  {
+    "name": "QR Code generator",
+    "version": "LVGL 9.2.2",
+    "author": "Project Nayuki",
+    "license": "MIT",
+    "scope": "firmware",
+    "notice": "QR-Code-generator.txt",
+    "source": ""
+  },
+  {
+    "name": "Arduino-ESP32",
+    "version": "2.0.17",
+    "author": "Espressif / Arduino contributors",
+    "license": "LGPL-2.1-or-later",
+    "scope": "firmware",
+    "notice": "Arduino-ESP32.txt",
+    "source": "https://github.com/espressif/arduino-esp32/tree/2.0.17"
+  },
+  {
+    "name": "ESP-IDF",
+    "version": "4.4.7",
+    "author": "Espressif and third-party authors",
+    "license": "Apache-2.0 + component licenses",
+    "scope": "firmware",
+    "notice": "ESP-IDF-COPYRIGHT.rst",
+    "source": "https://github.com/espressif/esp-idf/tree/v4.4.7"
+  },
+  {
+    "name": "ESP32 BLE Arduino",
+    "version": "2.0.0",
+    "author": "Neil Kolban / Espressif",
+    "license": "Apache-2.0",
+    "scope": "firmware",
+    "notice": "ESP32-BLE-Arduino.txt",
+    "source": ""
+  },
+  {
+    "name": "Arduino libb64",
+    "version": "bundled",
+    "author": "Chris Venter",
+    "license": "Public Domain",
+    "scope": "firmware",
+    "notice": "Arduino-libb64.txt",
+    "source": ""
+  },
+  {
+    "name": "Montserrat Medium",
+    "version": "LVGL font source",
+    "author": "Julieta Ulanovsky and contributors",
+    "license": "OFL-1.1",
+    "scope": "font",
+    "notice": "Montserrat-Medium.txt",
+    "source": ""
+  },
+  {
+    "name": "Noto Emoji",
+    "version": "subset / 358 glyphs",
+    "author": "Google LLC / Noto contributors",
+    "license": "OFL-1.1",
+    "scope": "font",
+    "notice": "Noto-Emoji.txt",
+    "source": "https://github.com/google/fonts/tree/main/ofl/notoemoji"
+  },
+  {
+    "name": "Natural Earth",
+    "version": "1:50m / admin boundaries",
+    "author": "Natural Earth contributors",
+    "license": "Public Domain",
+    "scope": "map data",
+    "notice": null,
+    "source": "https://www.naturalearthdata.com/about/terms-of-use/"
+  },
+  {
+    "name": "Nordic nRF52 headers",
+    "version": "vendored / unused on ESP32",
+    "author": "Nordic Semiconductor",
+    "license": "Nordic restricted license",
+    "scope": "source only",
+    "notice": "Nordic-source-only.txt",
+    "source": ""
+  },
+  {
+    "name": "AsyncElegantOTA",
+    "version": "vendored / unused",
+    "author": "Ayush Sharma",
+    "license": "MIT",
+    "scope": "source only",
+    "notice": "AsyncElegantOTA.txt",
+    "source": ""
+  },
+  {
+    "name": "LittleFS STM32",
+    "version": "vendored / unused",
+    "author": "ARM / littlefs contributors",
+    "license": "BSD-3-Clause",
+    "scope": "source only",
+    "notice": "LittleFS-STM32.txt",
+    "source": ""
+  },
+  {
+    "name": "FreeRTOS",
+    "version": "bundled",
+    "author": "Amazon.com / contributors",
+    "license": "MIT",
+    "scope": "ESP-IDF component",
+    "notice": "FreeRTOS.txt",
+    "source": ""
+  },
+  {
+    "name": "lwIP",
+    "version": "bundled",
+    "author": "Swedish Institute of Computer Science",
+    "license": "BSD-3-Clause",
+    "scope": "ESP-IDF component",
+    "notice": "espressif-esp-lwip.txt",
+    "source": ""
+  },
+  {
+    "name": "Mbed TLS",
+    "version": "bundled",
+    "author": "ARM / contributors",
+    "license": "Apache-2.0",
+    "scope": "ESP-IDF component",
+    "notice": "espressif-mbedtls.txt",
+    "source": ""
+  },
+  {
+    "name": "SPIFFS",
+    "version": "bundled",
+    "author": "Peter Andersson",
+    "license": "MIT",
+    "scope": "ESP-IDF component",
+    "notice": "pellepl-spiffs.txt",
+    "source": ""
+  },
+  {
+    "name": "FatFS",
+    "version": "bundled",
+    "author": "ChaN",
+    "license": "BSD-style",
+    "scope": "ESP-IDF component",
+    "notice": "FatFS.txt",
+    "source": ""
+  },
+  {
+    "name": "Newlib",
+    "version": "bundled",
+    "author": "Various authors (see SDK notices)",
+    "license": "BSD / multiple notices",
+    "scope": "ESP-IDF component",
+    "notice": "Newlib.txt",
+    "source": ""
+  },
+  {
+    "name": "Bluedroid",
+    "version": "bundled",
+    "author": "Android / Broadcom / Espressif",
+    "license": "Apache-2.0",
+    "scope": "ESP-IDF component",
+    "notice": "Bluedroid.txt",
+    "source": ""
+  },
+  {
+    "name": "wpa_supplicant",
+    "version": "bundled",
+    "author": "Jouni Malinen and contributors",
+    "license": "BSD",
+    "scope": "ESP-IDF component",
+    "notice": "wpa-supplicant.txt",
+    "source": ""
+  },
+  {
+    "name": "ESP radio libraries",
+    "version": "bundled",
+    "author": "Espressif Systems",
+    "license": "Apache-2.0 (binary SDK libs)",
+    "scope": "ESP-IDF component",
+    "notice": "espressif-esp32-wifi-lib.txt",
+    "source": ""
+  },
+  {
+    "name": "ROM miniz",
+    "version": "bundled",
+    "author": "Rich Geldreich",
+    "license": "Public Domain",
+    "scope": "ROM",
+    "notice": "ESP-IDF-COPYRIGHT.rst",
+    "source": ""
+  },
+  {
+    "name": "SDL2",
+    "version": "2.32.70",
+    "author": "Sam Lantinga / contributors",
+    "license": "Zlib",
+    "scope": "simulator",
+    "notice": "SDL2.txt",
+    "source": ""
+  },
+  {
+    "name": "zlib",
+    "version": "SDK headers 1.2.12",
+    "author": "Jean-loup Gailly / Mark Adler",
+    "license": "Zlib",
+    "scope": "simulator",
+    "notice": "zlib.txt",
+    "source": ""
+  },
+  {
+    "name": "lv_font_conv",
+    "version": "1.5.3",
+    "author": "Vitaly Puzrin / contributors",
+    "license": "MIT",
+    "scope": "asset tool",
+    "notice": "lv-font-conv.txt",
+    "source": ""
+  },
+  {
+    "name": "Pillow",
+    "version": "asset tool; license snapshot 12.0.0",
+    "author": "Pillow contributors / Secret Labs",
+    "license": "HPND",
+    "scope": "asset tool",
+    "notice": "Pillow.txt",
+    "source": ""
+  },
+  {
+    "name": "PlatformIO Core",
+    "version": "build host",
+    "author": "PlatformIO Labs",
+    "license": "Apache-2.0",
+    "scope": "build tool",
+    "notice": "PlatformIO.txt",
+    "source": ""
+  },
+  {
+    "name": "CMake",
+    "version": "build host",
+    "author": "Kitware and contributors",
+    "license": "BSD-3-Clause",
+    "scope": "build tool",
+    "notice": "CMake.txt",
+    "source": ""
+  },
+  {
+    "name": "cJSON",
+    "version": "SDK bundled",
+    "author": "Dave Gamble and contributors",
+    "license": "MIT",
+    "scope": "firmware",
+    "notice": "DaveGamble-cJSON.txt",
+    "source": ""
+  },
+  {
+    "name": "protobuf-c",
+    "version": "SDK bundled",
+    "author": "protobuf-c authors / Dave Benson",
+    "license": "BSD-2-Clause",
+    "scope": "firmware",
+    "notice": "protobuf-c.txt",
+    "source": ""
+  },
+  {
+    "name": "TLSF",
+    "version": "SDK bundled",
+    "author": "Matthew Conte",
+    "license": "BSD-3-Clause",
+    "scope": "firmware",
+    "notice": "TLSF.txt",
+    "source": ""
+  },
+  {
+    "name": "Xtensa runtime",
+    "version": "SDK bundled",
+    "author": "Tensilica / Cadence",
+    "license": "MIT",
+    "scope": "firmware",
+    "notice": "Xtensa.txt",
+    "source": ""
+  },
+  {
+    "name": "GCC runtime / libstdc++",
+    "version": "SDK bundled",
+    "author": "Free Software Foundation",
+    "license": "GPL-3.0 + Runtime Exception",
+    "scope": "firmware",
+    "notice": "GCC-Runtime-Exception.txt",
+    "source": ""
+  },
+  {
+    "name": "esptool",
+    "version": "PlatformIO package",
+    "author": "Espressif and contributors",
+    "license": "GPL-2.0-or-later",
+    "scope": "build tool",
+    "notice": "esptool.txt",
+    "source": "https://github.com/espressif/esptool"
+  }
+]

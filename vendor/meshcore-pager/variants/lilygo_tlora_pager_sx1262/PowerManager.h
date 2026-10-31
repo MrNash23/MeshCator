@@ -17,7 +17,6 @@ public:
 
 private:
   PowerManager() = default;
-  static bool xl9555SetBit(uint8_t bit, bool on); // RMW, shared chip-safe
   void setBacklight(uint8_t level);               // 0..255 (or 16 steps)
 
   uint32_t _screenTimeout = 90;

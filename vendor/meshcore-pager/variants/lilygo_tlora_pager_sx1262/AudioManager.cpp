@@ -101,6 +101,10 @@ bool AudioManager::begin() {
   setVolume(_volume);
   codecWrite(0x37, 0x08); // DAC: bypass equalizer
 
+  codecWrite(0x13, 0x30);
+  paEnable(false);
+  i2s_stop(I2S_P); // no continuous audio DMA/clock while idle
+
   BaseType_t task_ret = xTaskCreate(audioTask, "audio", 4096, this, 1, &_audioTaskHandle);
   Serial.printf("[audio] xTaskCreate: %s  handle=%p\n", task_ret == pdPASS ? "OK" : "FAIL", _audioTaskHandle);
   return true;
@@ -137,6 +141,7 @@ void AudioManager::tone(int freq_hz, int ms) {
   for (int i = 0; i < 256; i++)
     wav[i] = (int16_t)(amp * sinf(2.0f * (float)M_PI * freq_hz * i / sr));
 
+  i2s_start(I2S_P);
   paEnable(true);
   codecWrite(0x13, 0x20); // HP enable, unmute (bit5=1 bit4=0)
   vTaskDelay(pdMS_TO_TICKS(15));
@@ -150,6 +155,7 @@ void AudioManager::tone(int freq_hz, int ms) {
   i2s_write(I2S_P, zero, sizeof(zero), &w, pdMS_TO_TICKS(100));
   codecWrite(0x13, 0x30); // HP enable, muted (bit5=1 bit4=1)
   paEnable(false);        // amp off
+  i2s_stop(I2S_P);
 }
 
 void AudioManager::chimeFor(SoundEvent ev) {

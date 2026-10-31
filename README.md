@@ -4,9 +4,11 @@ MeshCore-Firmware und LVGL-Oberfläche für den LilyGo T-LoRa Pager SX1262.
 Die aktuelle Implementierung ist ein Entwicklungsstand, keine abgeschlossene
 Umsetzung des gesamten Feature-Backlogs aus PLAN.md.
 
-## Stand 0.3.8-dev
+## Stand 0.3.25-dev
 
-512 Nachrichten im persistenten Verlauf; neue Nachrichten werden bei verfügbarer SD-Karte zusätzlich unter `/meshcator/messages.tsv` protokolliert. Ältere SD-Einträge sind per USB exportierbar, werden aber noch nicht in die Chatansicht nachgeladen. Details und Grenzen: [Nachrichtenarchiv](docs/HISTORY-0.3.8.md). 21 lokale Tests bestanden; die SD-Funktion muss noch am Gerät geprüft werden.
+512 Nachrichten im persistenten Verlauf; neue Nachrichten werden bei verfügbarer SD-Karte zusätzlich unter `/meshcator/messages.tsv` protokolliert. Ältere SD-Einträge sind per USB exportierbar, werden aber noch nicht in die Chatansicht nachgeladen. Details und Grenzen: [Nachrichtenarchiv](docs/HISTORY-0.3.8.md). 29 lokale Tests bestanden. SD-Karten wurden am Pager erprobt.
+
+Aktuell enthalten sind unter anderem individuelle Lesemarkierungen mit Einstieg bei der ältesten ungelesenen Nachricht, statische Absenderflächen, Emoji-Unterstützung, haptisches Menüfeedback und optimiertes SD-Kartenladen. Karten lassen sich mit A/S/W/Z verschieben; Nodes haben kontrastreiche Markierungen mit transparentem Außenring. Display-Aufwecken bei Nachrichten ist separat konfigurierbar. Details: [Funktionsstand](docs/FEATURES-0.3.md) und [Karten](docs/MAPS.md).
 
 ## Desktop-Simulator
 
@@ -222,14 +224,14 @@ vier Sprachen und Migration alter Einstellungen auf Englisch.
 Karten-Vollbild: In Map öffnet Radklick/Enter das Kartenmenü. Fullscreen
 vergrößert die aktuelle Karte auf 480 × 222. Exit fullscreen oder
 Back führt zur normalen Kartenansicht zurück; Back schließt zunächst ein
-offenes Menü. Rad zoomt weiterhin, langes Back geht nach Home. Position und
+offenes Menü. Rad zoomt weiterhin, langes Back geht ebenfalls eine Ebene zurück. Position und
 Zoom bleiben beim Umschalten erhalten. Basiskarte und SD-Kacheln verwenden
 dieselbe Web-Mercator-Projektion im Normal- und Vollbildmodus.
 
 Korrektur der physischen Tastatur-Zurück-/Löschtaste: kurzes Drücken löscht
 im Nachrichteneditor genau ein UTF-8-Zeichen, außerhalb geht es zurück.
-Die kurze Aktion erfolgt beim Loslassen. Halten >2 Sekunden führt überall
-nach Home, ohne Zeichen zu löschen; der Entwurf bleibt erhalten. Dies gilt
+Die kurze Aktion erfolgt beim Loslassen. Halten 0,8 Sekunden führt eine Ebene zurück
+(zum vorherigen Screen bzw. aus dem offenen Menü), ohne Zeichen zu löschen; der Entwurf bleibt erhalten. Dies gilt
 zusätzlich zur Seitentaste. SDL-Backspace bildet dieselbe Kurz-/Langdrucklogik ab.
 
 ## Node- und Chat-Kontextmenüs
@@ -267,7 +269,7 @@ vollständiger Ripple-/MeshOS-Funktionsgleichheit.
 
 Merksatz: **Drehen wählt, Klicken bestätigt, Halten öffnet das Hauptmenü,
 Zurück führt zurück.** Im Chat: Enter sendet, Radklick öffnet das Chatmenü,
-kurzes Back/Delete löscht. Back/Delete >2 Sekunden geht immer nach Home und
+kurzes Back/Delete löscht. Back/Delete 0,8 Sekunden halten geht eine Ebene zurück und
 bewahrt den Entwurf. Die separate Seitentaste bleibt eine Navigationstaste.
 Buchstabentasten außerhalb des Editors lösen keine versteckten Funkaktionen aus.
 
@@ -325,7 +327,70 @@ Vorrang. Alarmhardware und Smartphone-Pairing sind noch nicht real abgenommen.
 ## Stand 0.3.0-dev
 
 DM-ACK/Timeout/Retry, persistenter Verlauf und Entwürfe, Kanal-/Kontaktverwaltung,
-zwölf monochrome Unicode-Emojis, Remote-Anmeldung/Abfragen/CLI und ein isolierter
+160 auswählbare Emojis und 358 monochrome Emoji-Zeichen, Remote-Anmeldung/Abfragen/CLI und ein isolierter
 USB-Wartungskanal sind implementiert. Umfang, Bedienung, USB-Befehle und Grenzen:
 [FEATURES-0.3.md](docs/FEATURES-0.3.md). Frühere Audit-Listen dokumentieren den
 vorherigen Stand; Hardwareabnahme und sichere Installation bleiben offen.
+
+Credits sind unter Einstellungen → Info / Credits abrufbar. Lizenzinventar und Originaltexte: [THIRD_PARTY.md](THIRD_PARTY.md) und [LICENSES/components.json](LICENSES/components.json). Die Projekt-MIT-Lizenz ersetzt nicht die Lizenzen der Abhängigkeiten.
+
+## Zwischenstand: Pager-Mehrfachinstallation mit Bruce (31.10.2026)
+
+Auf ausdrücklichen Wunsch ersetzen Bruce 1.16.1 und sein eigener Speicher
+Meshtastic und Roami. FT8 wurde unverändert nach 0x1a0000 verschoben;
+Launcher, MeshOS, MeshCator und ihre bisherigen Daten bleiben erhalten.
+`config/partitions-launcher.csv` beschreibt den neuen Zustand. MeshCator bleibt
+bei 0x6e0000, verwendet jetzt aber OTA-Slot 3. Die geschützten Update-/Auswahltools
+berücksichtigen sowohl das alte als auch das neue Layout.
+
+Bruce basiert auf dem offiziellen T-LoRa-Pager-Release. Zwei überprüfte
+DROM-Zeichenketten wurden angepasst: `spiffs` → `brucef`, `nvs` → `bnv`.
+Segmentprüfsumme und Image-SHA wurden danach neu erzeugt; keine Änderung an
+Programmcode oder Funktionen. `tools/install_bruce_pager.py` dokumentiert
+Quelle, feste SHA-256, genaue Offsets, Sicherungsprüfung und Migration.
+Es ist ein gerätespezifisches Werkzeug, kein allgemeiner Flasher. Der
+Standardaufruf erzeugt nur einen Plan; Schreiben verlangt `--apply` und
+vollständige Übereinstimmung mit der 16-MB-Sicherung. Bruce bleibt ein
+separates AGPL-Projekt: https://github.com/BruceDevices/firmware/releases/tag/1.16.1 .
+
+Auch nach dem Bruce-Erststart wurden alle erhaltenen App-/Datenbereiche
+verifiziert. Bruce hat nur sein eigenes LittleFS initialisiert; sein neuer
+NVS-Bereich war dabei noch leer, dessen Nutzung ist noch nicht praktisch
+getestet. Bruce meldete keine lesbare SD-Karte. Die privaten Sicherungen und
+Prüfberichte liegen unter `backups/pager-2026-10-31/` und werden nicht publiziert.
+
+## Zwischenstand: FT8, MeshCator, MeshOS, Roami
+
+Am 31.10.2026 wurde Bruce auf Wunsch wieder entfernt und Roami bytegleich
+(aus der verifizierten Sicherung vor Bruce) bei 0xb70000 wiederhergestellt.
+Meshtastic bleibt entfernt. FT8 bei 0x1a0000, MeshOS bei 0x460000, MeshCator
+bei 0x6e0000 sowie Launcher und aktuelle Datenbereiche bleiben unverändert.
+Die OTA-Slots sind FT8=0, Roami=1, MeshOS=2, MeshCator=3. Der Bereich
+0x920000..0xb70000 ist gelöscht und frei; Bruces private Speicherpartitionen
+existieren nicht mehr. Der Start ist auf Roami gesetzt.
+
+Vorher wurde eine neue vollständige 16-MB-Sicherung erstellt und gegen den
+Pager verifiziert. `tools/restore_roami_pager.py` erzeugt standardmäßig nur
+einen Plan; `--apply` verlangt eine vollständige Übereinstimmung der aktuellen
+Sicherung mit dem Gerät und erhält die aktuellen Daten statt einer globalen
+Rücksicherung. Private Sicherung: `backups/pager-2026-10-31/full-before-roami.bin`;
+Prüfbericht: `backups/pager-2026-10-31/roami-restore/restoration-report.json`.
+
+## Historischer Zwischenstand: FT8, MeshCator, MeshOS, Bruce
+
+Auf erneuten Wunsch wurde Roami am 31.10.2026 wieder durch die bereits geprüfte
+isolierte Bruce-1.16.1-Installation ersetzt. Bruces eigene Einstellungen und
+Dateien stammen aus der verifizierten Sicherung vor der Roami-Rückkehr.
+FT8, MeshCator, MeshOS, Launcher und deren aktuelle Daten wurden bytegleich
+erhalten. Meshtastic und Roami sind nicht mehr installiert.
+
+Werkzeug: `tools/restore_bruce_pager.py`, standardmäßig nur Offline-Plan;
+Schreiben erfordert `--apply` und vollständigen Live-Abgleich der aktuellen
+16-MB-Sicherung. Sicherung davor: `backups/pager-2026-10-31/full-before-bruce-again.bin`.
+Prüfbericht: `backups/pager-2026-10-31/bruce-restore/restoration-report.json`.
+Die aktuelle CSV und geschützten Update-Werkzeuge verwenden weiterhin
+MeshCator bei 0x6e0000/OTA 3; Bruce liegt bei 0x920000/OTA 1 und ist zum Start gewählt.
+
+## Aktueller Mehrfachinstallationsstand
+
+Launcher, FT8, MeshOS, MeshCator 0.3.25 und Roami sind installiert; Bruce und Meshtastic sind entfernt. Maßgeblich ist `config/partitions-launcher.csv`. MeshCator liegt bei 0x6e0000 (OTA 3), Roami bei 0xb70000 (OTA 1). Die darüber dokumentierten Bruce-/Roami-Wechsel sind historische Zwischenstände. Firmware-Updates wurden nach Sicherung ausschließlich im MeshCator-Slot geschrieben; andere Apps und Daten wurden per Prüfsumme unverändert verifiziert. Private Gerätebackups und Kartenpakete werden nicht veröffentlicht.

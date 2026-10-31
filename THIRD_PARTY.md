@@ -38,20 +38,57 @@ abgeleitet. Änderungen: PSRAM-Puffer und Fehlerprüfung.
 
 Die generierten `src/ui/fonts/meshcator_font_*.c` enthalten Montserrat Medium
 aus dem LVGL-9.2.2-Quellbaum, erzeugt mit lv_font_conv 1.5.3, 4 bpp,
-ASCII + Latin-1 + Euro. Lizenz: SIL OFL, `src/ui/fonts/OFL.txt`.
+ASCII + Latin-1 + Euro, ergänzt um Œ/œ, Ÿ, ẞ und ’. Lizenz: SIL OFL, `src/ui/fonts/OFL.txt`.
 
 ## Kartenatlas und Haptik (Audit 2026-10-30)
 
 Natural Earth Land / Lakes 1:50 Millionen: Public Domain, siehe
 https://www.naturalearthdata.com/about/terms-of-use/ . Eigene Kachelerzeugung,
 keine fremden gerenderten Karten. Herkunft und Hashes: assets/maps/tiles-manifest.json.
-Adafruit DRV2605 Library 1.2.4: BSD-Lizenz, Original-Lizenz liegt in der
+Adafruit DRV2605 Library 1.2.4: MIT-Lizenz, Original-Lizenz liegt in der
 PlatformIO-Abhängigkeit; https://github.com/adafruit/Adafruit_DRV2605_Library .
 Zlib wird im Desktop zum Entpacken verwendet (zlib-Lizenz), auf dem ESP32-S3
 die vorhandene ROM-miniz-Funktion. Pillow ist nur ein Werkzeug zur Asset-Erzeugung.
 
-## Eigene Emoji-Symbole
+## Emoji-Schrift (ab 0.3.16)
 
-`tools/build_emoji_font.py` erzeugt zwölf selbst gezeichnete monochrome Symbole
-und den Variationsselektor als LVGL-Fallbackfont. Keine Emoji-Grafiken aus einem
-fremden Font; die bestehenden Montserrat-Textschriften bleiben unter SIL OFL.
+Noto Emoji, Copyright 2013 Google LLC, SIL Open Font License 1.1.
+Quelle: https://github.com/google/fonts/tree/main/ofl/notoemoji .
+Originalfont und Lizenz: `assets/fonts/noto-emoji/`; SHA-256 und Auswahl im
+`manifest.json`. `tools/build_emoji_font.py` erzeugt den modifizierten,
+monochromen MeshCator-Fallback (358 Zeichen, 20 px, 2 bpp). Die bisherige
+Sammlung eigener zwölf Zeichen wurde ersetzt. Keine Apple-Emoji-Grafiken.
+
+## Credits und Lizenzprüfung 0.3.16
+
+Einstellungen → Info / Credits zeigt die Komponenten, Autoren und Lizenzen
+sowie die Adresse des Quellcode-Repositories. `LICENSES/components.json`
+ist das gemeinsame Inventar; `tools/generate_credits.py` erzeugt daraus die
+Geräteansicht. `LICENSES/` enthält die Originaltexte, Copyright-Header und
+das offizielle ESP-IDF-Copyright-Verzeichnis. `linked-archives.json` wurde
+mit der Linker-Map des Launcher-Builds abgeglichen. Installierte, aber nicht
+verlinkte Build-Abhängigkeiten werden zusätzlich aufgeführt. Die
+SDK-Untermodulquellen und Hashes stehen in `sdk-notice-sources.json`.
+
+MeshCators eigener Code steht unter MIT. Das ist keine Umlizenzierung der
+Abhängigkeiten: Arduino-ESP32 2.0.17 und MicroNMEA 2.0.6 enthalten LGPL-Code;
+GCC-Laufzeitbibliotheken haben eine Runtime Exception. Schriften verwenden
+OFL, Kartendaten sind Public Domain. Die Espressif-Funkbibliotheken werden
+als Binärbibliotheken geliefert; ihre beigelegten Lizenztexte lauten Apache-2.0.
+Sie sind damit nicht als vollständig verfügbarer Quellcode zu bezeichnen.
+
+Die ungenutzten Nordic-Header im vendorten Unterbau haben eine auf Nordic-
+Hardware beschränkte Lizenz und werden nicht in die ESP32-Firmware eingebunden.
+Sie sind im Inventar ausdrücklich als „source only“ erfasst, nicht als MIT.
+Weitere nicht verwendete Plattformverzeichnisse behalten ihre Originalhinweise.
+
+Bei einer öffentlichen Binärveröffentlichung gehören `LICENSE`, `LICENSES/`,
+`THIRD_PARTY.md`, der zugehörige Quellstand einschließlich lokaler Änderungen
+und die Build-Anleitung zur Veröffentlichung. Insbesondere sind die
+LGPL-Quellen samt Möglichkeit zum Neubauen/Neuverlinken bereitzustellen;
+eine Credits-Seite allein ersetzt diese Materialien nicht. Diese Änderung
+stellt die Hinweise lokal bereit, veröffentlicht aber noch kein Release.
+
+Die Sammlung erfasst den konkreten ESP32-Launcher-Build, seine Fonts/Karten
+und die wichtigsten Simulator-/Build-Werkzeuge. Für andere Targets oder
+zukünftige Bibliotheksupdates muss das Inventar erneut abgeglichen werden.

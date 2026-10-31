@@ -6,13 +6,14 @@ class BackGesture {
   bool down_ = false, fired_ = false;
   uint32_t since_ = 0;
 public:
-  enum class Action { None, Short, Home };
+  static constexpr uint32_t HoldMs = 800;
+  enum class Action { None, Short, Back };
   Action update(bool down, uint32_t now) {
     if (down && !down_) { since_ = now; fired_ = false; }
     Action action = Action::None;
-    if ((down || down_) && !fired_ && uint32_t(now - since_) > 2000) {
+    if ((down || down_) && !fired_ && uint32_t(now - since_) >= HoldMs) {
       fired_ = true;
-      action = Action::Home;
+      action = Action::Back;
     } else if (!down && down_ && !fired_ && uint32_t(now - since_) >= 30) {
       action = Action::Short;
     }

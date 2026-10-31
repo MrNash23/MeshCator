@@ -10,9 +10,13 @@ template<class Reader> bool readBmpTile(Reader read,std::vector<uint16_t>&out){
  auto u32=[&](int p){return uint32_t(header[p])|uint32_t(header[p+1])<<8|uint32_t(header[p+2])<<16|uint32_t(header[p+3])<<24;};
  int32_t height=int32_t(u32(22));uint32_t start=u32(10);
  if(u16(0)!=0x4d42||u32(14)<40||u32(18)!=256||(height!=256&&height!=-256)||u16(26)!=1||u16(28)!=24||u32(30)!=0||start<54||start>4096)return false;
- out.resize(256*256);uint8_t row[768];
- for(int stored=0;stored<256;++stored){int y=height>0?255-stored:stored;if(!read(start+stored*768,row,sizeof row)){out.clear();return false;}
-  for(int x=0;x<256;++x){auto b=row+3*x;out[y*256+x]=uint16_t((b[2]>>3)<<11|(b[1]>>2)<<5|(b[0]>>3));}}
+ out.resize(256*256);std::vector<uint8_t> block(8*768);
+ for(int first=0;first<256;first+=8){
+  if(!read(start+first*768,block.data(),block.size())){out.clear();return false;}
+  for(int r=0;r<8;++r){int stored=first+r,y=height>0?255-stored:stored;
+   for(int x=0;x<256;++x){auto b=block.data()+r*768+3*x;out[y*256+x]=uint16_t((b[2]>>3)<<11|(b[1]>>2)<<5|(b[0]>>3));}
+  }
+ }
  return true;
 }
 }

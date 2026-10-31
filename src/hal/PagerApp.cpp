@@ -5,9 +5,12 @@
 #include "TPagerST7796Display.h"
 #include "UITask.h"
 #include "core/App.h"
+#include "core/PowerState.h"
 #include "core/MessageLog.h"
 #include "core/NodePath.h"
 #include "core/BackGesture.h"
+#include "core/InputHaptics.h"
+#include "core/MapHome.h"
 #include "ui/View.h"
 #include <Preferences.h>
 #include <SD.h>
@@ -26,6 +29,7 @@ bool meshcator_haptic_power(bool);
 void ui_apply_radio_changes();
 bool meshcator_configure_ble(bool, const char *, uint32_t);
 int tpager_battery_percent();
+int tpager_charge_status();
 int ui_get_sat_count();
 bool ui_get_gps_valid();
 int ui_get_noise_floor();
@@ -73,20 +77,39 @@ extern mc::App app;
 class PagerBackend : public mc::Backend {
   Adafruit_DRV2605 haptic_;
   bool hapticReady_=false;
+  uint32_t hapticAttempt_=0;
+  mc::InputHapticGate inputHapticGate_;
   uint32_t lastAlert_=0,lastAck_=0,lastTimeout_=0,lastSentTime_=0;
 public:
   void beginAlerts(){
+    hapticAttempt_=millis();hapticReady_=false;
     if(!meshcator_haptic_power(true))return;
     delay(10);
     hapticReady_=haptic_.begin(&Wire);
-    if(hapticReady_){haptic_.selectLibrary(1);haptic_.setMode(DRV2605_MODE_INTTRIG);haptic_.stop();}
+    if(hapticReady_){haptic_.useERM();haptic_.selectLibrary(1);haptic_.setMode(DRV2605_MODE_INTTRIG);haptic_.stop();}
+  }
+  void inputFeedback(mc::InputPulse pulse) {
+    if(!hapticReady_&&uint32_t(millis()-hapticAttempt_)>=5000)beginAlerts();
+    if(!hapticReady_||!inputHapticGate_.allow(pulse,millis()))return;
+    haptic_.stop();haptic_.setMode(DRV2605_MODE_INTTRIG);
+    // Built-in full-strength effects: strong click / distinct double click.
+    haptic_.setWaveform(0,pulse==mc::InputPulse::Confirm?10:17);
+    haptic_.setWaveform(1,0);haptic_.go();
+  }
+  std::string hapticDiagnostic(bool test){
+    if(test){beginAlerts();if(hapticReady_){haptic_.setWaveform(0,15);haptic_.setWaveform(1,0);haptic_.go();}}
+    char text[160];
+    Wire.beginTransmission(0x5a);bool present=Wire.endTransmission()==0;
+    snprintf(text,sizeof text,"ready=%u ack=%u status=%02x mode=%02x library=%02x go=%02x rated=%02x clamp=%02x feedback=%02x control3=%02x",
+      hapticReady_,present,present?haptic_.readRegister8(0):0,present?haptic_.readRegister8(1):0,present?haptic_.readRegister8(3):0,present?haptic_.readRegister8(12):0,present?haptic_.readRegister8(22):0,present?haptic_.readRegister8(23):0,present?haptic_.readRegister8(26):0,present?haptic_.readRegister8(29):0);
+    return text;
   }
   bool displayAwake() const override {return !PowerManager::instance().isScreenOff();}
   void notifyReceived(bool sound,bool vibrate,bool wake,bool channel) override {
     if(wake)PowerManager::instance().onActivity();
     auto now=millis();if(lastAlert_&&uint32_t(now-lastAlert_)<3000)return;lastAlert_=now;
     if(sound)AudioManager::instance().notify(channel?SoundEvent::MSG_CHANNEL:SoundEvent::MSG_DM);
-    if(vibrate&&hapticReady_){haptic_.setWaveform(0,16);haptic_.setWaveform(1,0);haptic_.go();}
+    if(vibrate&&hapticReady_){inputHapticGate_.notification(now);haptic_.setWaveform(0,16);haptic_.setWaveform(1,0);haptic_.go();}
   }
   std::string channelKey() override {uint8_t bytes[16];esp_fill_random(bytes,sizeof bytes);static const char digits[]="0123456789abcdef";std::string value;for(auto b:bytes){value+=digits[b>>4];value+=digits[b&15];}return value;}
   std::string createChannel(const std::string &name,const std::string &key,bool privateChannel) override {
@@ -153,7 +176,16 @@ public:
     if(op==2)return the_mesh.uiSendBinaryReq(key,1,nullptr,0,2);
     auto c=the_mesh.lookupContactByPubKey(key,32);uint32_t timeout=0;if(!c)return false;int r=the_mesh.sendCommandData(*c,ui_get_now_epoch(),0,text.c_str(),timeout);return r==MSG_SEND_SENT_DIRECT||r==MSG_SEND_SENT_FLOOD;
   }
+  bool mapHome(mc::Position& pos,int& zoom) override {
+    if(!sd_init())return false;
+    auto f=SD.open("/meshcator/map-home.txt",FILE_READ);
+    if(!f||f.size()==0||f.size()>96)return false;
+    char text[97]={};size_t n=f.size();if(f.read(reinterpret_cast<uint8_t*>(text),n)!=n)return false;
+    return mc::decodeMapHome(text,pos,zoom);
+  }
   bool readTile(int z,int x,int y,std::vector<uint16_t>&pixels) override {
+    // Map access must mount SD independently of message logging or USB maintenance.
+    if(!sd_init())return false;
     std::string path="/meshcator/tiles/"+std::to_string(z)+"/"+std::to_string(x)+"/"+std::to_string(y)+".bmp";
     auto f=SD.open(path.c_str(),FILE_READ);if(!f)return false;
     return mc::readBmpTile([&](uint32_t off,uint8_t*data,size_t len){return (f.position()==off||f.seek(off))&&f.read(data,len)==len;},pixels);
@@ -281,8 +313,10 @@ void readMeshSettings(mc::Settings &s) {
 }
 void syncModel() {
   readMeshSettings(app.settings);
+  if(PowerManager::instance().isGpsEnabled()!=app.settings.gps)PowerManager::instance().setGpsEnabled(app.settings.gps);
   meshcator_configure_ble(app.settings.bluetooth,app.settings.bluetoothName.c_str(),std::strtoul(app.settings.bluetoothPIN.c_str(),nullptr,10));
   app.status.battery = tpager_battery_percent();
+  int charge=tpager_charge_status();app.status.usbPowered=mc::usbPowered(charge);app.status.charging=mc::batteryCharging(charge);
   app.status.sats = ui_get_sat_count();
   app.status.fix = ui_get_gps_valid();
   app.status.epoch = ui_get_now_epoch();
@@ -317,11 +351,14 @@ void syncModel() {
 void key(mc::Key k) {
   PowerManager::instance().onActivity();
   app.notice.clear();
+  const auto before=mc::menuCursor(app);
+  const bool locked=app.screen==mc::Screen::Lock;
   app.key(k);
+  backend.inputFeedback(mc::inputPulse(k,before!=mc::menuCursor(app),locked));
 }
 void handleKeyboardBack(uint32_t now) {
   auto action = keyboardBack.update(keyboardBackDown, now);
-  if (action == mc::BackGesture::Action::Home) key(mc::Key::Home);
+  if (action == mc::BackGesture::Action::Back) key(mc::Key::Back);
   else if (action == mc::BackGesture::Action::Short) key(mc::Key::Delete);
 }
 } // namespace
@@ -430,6 +467,7 @@ void UITask::begin(DisplayDriver *d, SensorManager *s, NodePrefs *p) {
     prefs.end();
   }
   readMeshSettings(app.settings);
+  PowerManager::instance().setGpsEnabled(app.settings.gps); // also enforce disabled at boot
   backend.beginAlerts();
   backend.apply(app.settings);
   pinMode(PIN_USER_BTN, INPUT_PULLUP);
@@ -478,18 +516,24 @@ void UITask::loop() {
   bool side = digitalRead(PIN_SIDE_BTN) == LOW;
   if (side && !sideDown) { sidePressed = time; sideLongHandled = false; }
   if (side && !sideLongHandled && time - sidePressed > 2000) {
-    key(mc::Key::Home);
+    key(mc::Key::Back);
     sideLongHandled = true;
   }
   if (!side && sideDown && !sideLongHandled && time - sidePressed >= 30)
     key(mc::Key::Back);
   sideDown = side;
-  if (time - refreshed >= 1000) {
+  static bool wasAwake = true;
+  bool awake=backend.displayAwake();
+  if ((awake && !wasAwake) || time - refreshed >= (awake ? 1000u : 10000u)) {
     refreshed = time;
     syncModel();
   }
-  if (millis() - splashStarted >= 1200) view.render();
-  lv_timer_handler();
+  if(awake){
+    if(!wasAwake)app.changed();
+    if (millis() - splashStarted >= 1200) view.render();
+    lv_timer_handler();
+  }else delay(1); // yield CPU; radio/BLE/USB and input still serviced every loop
+  wasAwake=awake;
 }
 void UITask::showPreview(const char *from, const char *) {
   app.notice = mc::translate(app.settings.language, "Nachricht: ") + from;
@@ -514,6 +558,7 @@ extern "C" size_t meshcator_usb_request(const uint8_t *in,size_t len,uint8_t*out
  auto path=[&](){return std::string("/meshcator/")+resource.substr(3);};
  auto u32=[](const uint8_t*p){return uint32_t(p[0])|(uint32_t(p[1])<<8)|(uint32_t(p[2])<<16)|(uint32_t(p[3])<<24);};
  auto ok=[&](){out[3]=0;return size_t(4);};
+ if(in[3]==7||in[3]==8){auto info=backend.hapticDiagnostic(in[3]==8);std::memcpy(out+4,info.data(),info.size());out[3]=0;return 4+info.size();}
  if(in[3]==0){std::string info="MeshCator maintenance v1: settings history catalog entry sd:<path>";std::memcpy(out+4,info.data(),info.size());out[3]=0;return 4+info.size();}
  if(in[3]==1||in[3]==3){
   reset();resource.assign(reinterpret_cast<const char*>(in+4),len-4);if(resource.find('\0')!=std::string::npos)return 4;writing=in[3]==3;hash=2166136261u;guard=app.archive();

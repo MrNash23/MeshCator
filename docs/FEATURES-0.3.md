@@ -59,13 +59,21 @@ Die nativen MeshCore-Companion-Kommandos zum Austausch bleiben erhalten.
 
 ## Emojis
 
-Chatmenü → Emoji einfügen bietet zwölf häufige Symbole:
-🙂 😂 ❤️ 👍 👎 🙏 ✅ ❌ ⚠️ 📍 🚩 🔋.
-Sie werden als echte Unicode-Zeichen gesendet und mit eigenen monochromen
-Grafiken dargestellt; keine fremden Emoji-Bilder wurden übernommen.
-Variationsselektor U+FE0F wird unterstützt. Es handelt sich um eine begrenzte
-Auswahl, nicht um einen vollständigen Unicode-Emoji-/ZWJ-Font. Andere Emojis
-können weiterhin als fehlendes Zeichen erscheinen. Das Funklimit zählt UTF-8-Bytes.
+Chatmenü → Emoji einfügen zeigt 160 häufige Emojis in einem Raster mit
+32 Zeichen pro Seite. Das Rad wählt über alle Seiten hinweg, Klick/Enter fügt
+ein. Insgesamt 358 monochrome Noto-Emoji-Zeichen stehen in allen Textschriften
+für Chat-, Kanal- und Node-Namen sowie Nachrichten zur Verfügung (OFL-1.1).
+
+Variationsselektoren, Hauttöne und ZWJ erzeugen keine zusätzlichen Kästchen.
+Hauttöne bleiben monochrom; ZWJ-Kombinationen erscheinen als einzelne
+Basiszeichen. Länderflaggen werden nur zur Anzeige in Codes wie [DE]
+umgewandelt. Gespeicherter und gesendeter Unicode-Text bleibt unverändert.
+Löschen entfernt Emoji mit Selektor/Hautfarbe bzw. ZWJ-Ketten zusammen.
+Das Funklimit bleibt 150 UTF-8-Bytes. Nicht enthaltene Zeichen können
+weiterhin als Kästchen erscheinen; kein vollständiger Unicode-Emoji-Satz.
+
+Einstellungen → Info / Credits enthält Autoren, Frameworks, Bibliotheken,
+Lizenzen und Quellcode-Adresse. Originaltexte liegen im Repository in LICENSES/.
 
 ## Remote-Administration
 
@@ -150,3 +158,23 @@ Migration des Mehrfachinstallations-Pagers.
 ## Kontakt-/Repeater-Ergänzung 0.3.1
 
 Siehe [Funktionsumfang und Geräteabnahme](NODE-FUNCTIONS-0.3.1.md). Die dort ergänzten Kontaktfunktionen ersetzen die entsprechenden Einschränkungen dieses früheren Stands.
+
+### Eingabe-Haptik (0.3.17)
+
+Menüauswahl per Drehrad erzeugt einen kurzen DRV2605-Tick; Radklick und Enter erzeugen einen kurzen Bestätigungsimpuls. Kein Tick beim Kartenzoom oder Scrollen des Chatverlaufs. Ohne blockierende Wartezeit, bei schnellen Menüwechseln auf einen Tick je 40 ms begrenzt. Eine laufende Nachrichtenvibration hat Vorrang. Bestätigung quittiert die Eingabe, nicht die Zustellung einer Nachricht. Auf Hardware noch zu prüfen.
+
+## 0.3.20: Ungelesene Nachrichten und Absender
+
+Chats und Kanäle öffnen bei der ältesten gespeicherten ungelesenen Nachricht. Das lokalisierte schwarze Neu/New/Nouv./Nuevo-Badge bleibt bei der ersten Ansicht stehen. Beim Weiterblättern oder Verlassen/Überdecken der sichtbaren Nachrichtenansicht wird nur diese Nachricht gelesen markiert. Nicht besuchte Nachrichten bleiben ungelesen; neue Eingänge verschieben beim Lesen älterer Nachrichten nicht den betrachteten Eintrag. Ist keine Nachricht ungelesen, öffnet der Chat bei der neuesten.
+
+Lesestatus wird pro Nachricht im Archivformat MCH2 gespeichert. MCH1 wird übernommen: die bisherigen Chat-Zähler werden den neuesten eingegangenen Nachrichten zugeordnet (eigene Nachrichten werden übersprungen). Alte Firmware kann MCH2 nicht lesen; für einen Rückwechsel die vor dem Update gesicherte Historie verwenden.
+
+Absender stehen in einer dunklen Namensfläche, der eigentliche Text separat darunter; Datum/Uhrzeit weiterhin oben rechts. Bei Kanälen wird das MeshCore-Präfix `Name: Text` für die Darstellung getrennt, der Originaltext bleibt gespeichert. Ohne Präfix wird kein Absender erfunden. Lange Texte verwenden bei Bedarf eine kleinere Schrift, damit sie die Statuszeile nicht überlagern.
+
+## 0.3.22: Back/Del schneller
+
+Back/Del löst Zurück nach 800 ms statt mehr als 2 Sekunden aus. Kurzes Drücken löscht weiterhin erst beim Loslassen; langes Drücken löscht keinen Text und löst nur einmal aus. Die Einführung ist in allen vier Sprachen angepasst.
+
+## 0.3.25: Deutlicheres haptisches Feedback
+
+Menüwechsel verwendet DRV2605-Effekt 17 (Strong Click 1, 100 %), Bestätigen Effekt 10 (Double Click, 100 %). Motorspannung und Begrenzung bleiben unverändert. Der Nutzer hat die Motorfunktion mit 0.3.24 bestätigt; die Wirkung der neuen Effekte muss am Gerät beurteilt werden.

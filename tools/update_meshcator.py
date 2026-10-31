@@ -16,7 +16,7 @@ def main():
  report={'completed':False,'backup_verified':False,'before':{},'after':{}}
  try:
   table=esp.read_flash(0x8000,4096);assert table==a.table.read_bytes().ljust(4096,b'\xff'),'Unexpected table'
-  entries=partitions(table);address,size,kind,subtype,_=entries['meshcator'];assert (address,size,kind,subtype)==(0x6e0000,0x240000,0,0x14);assert len(firmware)<=size
+  entries=partitions(table);address,size,kind,subtype,_=entries['meshcator'];assert (address,size,kind)==(0x6e0000,0x240000,0) and subtype in (0x13,0x14);assert len(firmware)<=size
   backup=a.reuse_slot.read_bytes() if a.reuse_slot else b''
   if len(backup)==size and esp.flash_md5sum(address,size).lower()==hashlib.md5(backup).hexdigest():
    print('Existing complete slot image matches live flash; reusing verified backup.',flush=True)

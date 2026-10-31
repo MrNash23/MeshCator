@@ -27,7 +27,7 @@ std::vector<std::string> settingOptions(SettingField f) {
   case F::NotificationMode:return {"Stumm","Ton","Vibration","Ton + Vibration"};
   case F::NotificationVolume:return {"20","40","60","80","100"};
   case F::Language:return {"English","Français","Español","Deutsch"};
-  case F::Theme:return {"Farbkarten","Helle Baender","Warm Orange","Neon Purple"};
+  case F::Theme:return {"Farbkarten","Helle Bänder","Warm Orange","Neon Purple"};
   case F::Preset:{std::vector<std::string> v; for(auto &p:radioPresets)v.push_back(p.name); return v;}
  case F::ChatFilter:return {"Alle","Kanäle","Direktnachrichten"};
   case F::Mode:return {"Companion","Companion + forwarding"};
@@ -60,7 +60,7 @@ std::string settingValue(const Settings&s,SettingField f){
  case F::Bluetooth:return s.bluetooth?"Ein":"Aus";case F::BluetoothName:return s.bluetoothName;
  case F::BluetoothPIN:return s.bluetoothPIN;case F::Brightness:return num(s.brightness);case F::Timeout:return num(s.timeout);
  case F::MapSource:return settingOptions(f)[s.mapSource];case F::Contacts:return s.showContacts?"Ein":"Aus";
- case F::Setup:return s.setupComplete?"Bestätigt":"Senden gesperrt";case F::Version:return "MeshCator 0.3.8-dev";
+ case F::Setup:return s.setupComplete?"Bestätigt":"Senden gesperrt";case F::Version:return "MeshCator 0.3.25-dev";
  }
  return {};
 }

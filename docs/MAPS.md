@@ -77,3 +77,25 @@ bei Zoom 18 sind sie **nicht lagegenau**. Die Regionsanzeige nahe einer Grenze
 kann entsprechend abweichen. Ein Name in der Kopfzeile bedeutet keine zusätzliche
 Straßenauflösung. Herkunft/Prüfsummen: `assets/maps/admin-manifest.json`.
 Reproduktion: `python3 tools/build_admin_map.py` → `src/maps/AdminData.h`.
+
+## Berlin / Brandenburg auf SD (31.10.2026)
+
+Für Roami bleibt das bestehende Berlin-Paket (Zoom 10–16, einschließlich Umland) erhalten. Ein zusätzliches Paket `roami/maps/Brandenburg-2026-10-31.rmap` deckt das Rechteck 11.20–14.80° Ost / 51.30–53.60° Nord auf Zoom 7–13 ab (9.761 Kacheln). Die neuen Karten wurden mit Roamis Renderer aus Protomaps-/OpenStreetMap-Vektordaten erzeugt; ohne zusätzliche Höhenlinien.
+
+Dieselben Rasterkarten werden als unkomprimierte RGB24-BMPs unter `meshcator/tiles/{z}/{x}/{y}.bmp` abgelegt. Bei Überlappung bleiben die Berliner Kacheln erhalten. In MeshCator „Automatic“ oder „SD card“ als Kartenquelle wählen. Dies sind externe Straßenkarten im Roami-Kartenstil, keine Erweiterung des eingebauten Natural-Earth-Atlas und keine Routingdaten.
+
+Quellen-/Lizenzhinweise liegen als `Berlin-Brandenburg-SOURCES-2026-10-31.txt` in den Kartenverzeichnissen. Kartendaten: © OpenStreetMap contributors, ODbL; Offline-Vektorquelle: Protomaps.
+
+### Offline-Startansicht ab 0.3.18
+
+Optional enthält `/meshcator/map-home.txt` eine Zeile `MCMAP1 52.52 13.405 12` (Breitengrad, Längengrad, Startzoom). Bei aktivierter SD-/Automatikquelle wird diese Position ohne GPS-Fix als Kartenmittelpunkt verwendet; sie wird nie als eigener GPS-Standort gespeichert oder gesendet. Eine explizit gewählte Kartenposition und ein gültiger GPS-Fix haben Vorrang. Der Startzoom wird nur beim ersten Laden und unverändertem Standardzoom angewendet. Die Datei wird beim nächsten App-Start neu eingelesen. Kartenlesezugriffe initialisieren die SD unabhängig von Nachrichtenarchiv und USB-Wartung. Unter Zoom 7 liegen für das Berlin/Brandenburg-Paket keine Kacheln vor; Automatik zeigt dann die eingebaute Weltkarte.
+
+### Kartenbedienung und Laden ab 0.3.19
+
+In der normalen Kartenansicht und im Vollbild verschieben A / S / W / Z den Ausschnitt um 64 Bildpunkte nach links / rechts / oben / unten. Großbuchstaben funktionieren ebenfalls. Offene Menüs und Texteingaben haben Vorrang. Das Rad zoomt weiterhin; „Eigene Position“ hebt den manuell gewählten Mittelpunkt auf.
+
+Ausstehende SD-Kacheln werden in aufeinanderfolgenden UI-Durchläufen geladen, ohne auf den nächsten sekündlichen Status-Refresh zu warten. Pro Durchlauf bleibt es bei einer Kachel, damit Eingaben dazwischen verarbeitet werden. BMP-Daten werden in achtzeiligen Blöcken gelesen (33 statt 257 Leseaufrufen je Kachel inklusive Header). Der Cache verdrängt bevorzugt Kacheln außerhalb des sichtbaren Ausschnitts. Die SD-Übertragung selbst bleibt synchron; die tatsächliche Ladezeit hängt weiterhin von Karte und Bus ab.
+
+### Node-Markierungen ab 0.3.23
+
+Kontakte auf der Karte haben einen violetten Kern (#A638FF), eine weiße Kontur und einen größeren violetten Ring mit 45 % Deckkraft. Der Ring wird mit den tatsächlichen Kartenpixeln gemischt, sodass Straßenkarten darunter erkennbar bleiben. Gilt für Standardkarte, SD-Kacheln und Vollbild. Eigene Position und Navigationsziel behalten ihre bisherige Kreuzmarkierung.

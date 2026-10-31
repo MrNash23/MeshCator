@@ -1,5 +1,27 @@
 #include "App.h"
+#include "maps/Projection.h"
 namespace mc {
+void App::prepareMap(){
+ if(settings.mapSource==0||mapHomeLoaded)return;
+ mapHomeLoaded=true;Position center;int zoom=2;
+ if(backend_.mapHome(center,zoom)&&center.valid){
+  offlineMapCenter=center;
+  if(!mapCenter.valid&&mapZoom==2)mapZoom=zoom;
+ }
+}
+
+bool App::panMap(char key){
+ if(screen!=Screen::Map||menuOpen||helpOpen||contextOpen||mapMenuOpen||waypointNaming||waypointList||notificationMenu||utility!=Utility::None)return false;
+ int dx=0,dy=0;
+ switch(key){case 'a':case 'A':dx=-64;break;case 's':case 'S':dx=64;break;case 'w':case 'W':dy=-64;break;case 'z':case 'Z':dy=64;break;default:return false;}
+ prepareMap();
+ Position center=mapCenter.valid?mapCenter:status.position.valid?status.position:settings.mapSource!=0&&offlineMapCenter.valid?offlineMapCenter:Position{20,0,true};
+ double world=256.*std::pow(2.,mapZoom),x=mapX(center.lon,world)+dx,y=std::clamp(mapY(center.lat,world)+dy,0.,world);
+ x-=std::floor(x/world)*world;
+ mapCenter={std::atan(std::sinh(3.141592653589793*(1.-2.*y/world)))*180./3.141592653589793,x/world*360.-180.,true};
+ changed();return true;
+}
+
 bool App::handleMapKey(Key k){
  if(screen!=Screen::Map||menuOpen||helpOpen)return false;
  if(k==Key::Home||k==Key::Menu)return false;

@@ -7,7 +7,8 @@
 LV_FONT_DECLARE(meshcator_font_14);
 namespace mc {
 void View::drawMap(int x,int y,int w,int h,uint32_t background,uint32_t coast,uint32_t accent){
- Position center=app_.mapCenter.valid?app_.mapCenter:app_.status.position.valid?app_.status.position:Position{20,0,true};
+ app_.prepareMap();
+ Position center=app_.mapCenter.valid?app_.mapCenter:app_.status.position.valid?app_.status.position:app_.settings.mapSource!=0&&app_.offlineMapCenter.valid?app_.offlineMapCenter:Position{20,0,true};
  double world=256.*std::pow(2.,app_.mapZoom),cx=mapX(center.lon,world),cy=mapY(center.lat,world);
  std::ostringstream key;key.precision(15);
  key<<w<<','<<h<<','<<app_.mapZoom<<','<<std::floor(cx)<<','<<std::floor(cy)<<','<<background<<','<<coast<<','<<accent<<','<<app_.settings.mapSource<<','<<int(app_.settings.language)<<','<<app_.settings.showContacts;
@@ -81,6 +82,9 @@ void View::drawMap(int x,int y,int w,int h,uint32_t background,uint32_t coast,ui
   int minX=int(std::floor((cx-w*.5)/256)),maxX=int(std::floor((cx+w*.5-1)/256));
   int minY=int(std::floor((cy-h*.5)/256)),maxY=int(std::floor((cy+h*.5-1)/256));
   int count=1<<app_.mapZoom;
+  std::vector<std::string> visible;
+  for(int ty=minY;ty<=maxY;++ty)for(int tx=minX;tx<=maxX;++tx)
+   if(ty>=0&&ty<count)visible.push_back(std::to_string(app_.mapZoom)+"/"+std::to_string((tx%count+count)%count)+"/"+std::to_string(ty));
   for(int ty=minY;ty<=maxY;++ty)for(int tx=minX;tx<=maxX;++tx){
    if(ty<0||ty>=count)continue;
    int wrapped=(tx%count+count)%count;
@@ -88,7 +92,7 @@ void View::drawMap(int x,int y,int w,int h,uint32_t background,uint32_t coast,ui
    auto found=tiles_.find(key);
    if(found==tiles_.end()){
     if(tileRead){++missing;mapPending_=true;continue;}tileRead=true;
-    if(tiles_.size()>=8)tiles_.erase(tiles_.begin());
+    if(tiles_.size()>=8){auto victim=std::find_if(tiles_.begin(),tiles_.end(),[&](const auto& item){return std::find(visible.begin(),visible.end(),item.first)==visible.end();});if(victim!=tiles_.end())tiles_.erase(victim);}
     std::vector<uint16_t> pixels;if(!app_.readTile(app_.mapZoom,wrapped,ty,pixels))pixels.clear();
     found=tiles_.emplace(key,std::move(pixels)).first;
    }
@@ -108,7 +112,21 @@ void View::drawMap(int x,int y,int w,int h,uint32_t background,uint32_t coast,ui
  auto marker=[&](Position pos,bool own){
   if(!pos.valid)return;
   int px=std::lround(w*.5+wrapMapX(mapX(pos.lon,world)-cx,world)),py=std::lround(h*.5+mapY(pos.lat,world)-cy);
-  for(int dy=-4;dy<=4;++dy)for(int dx=-4;dx<=4;++dx)if(dx*dx+dy*dy<=16)pixel(px+dx,py+dy,rgb(own?accent:coast));
+  if(!own){
+   // Violet core, opaque white keyline and 45% outer ring over the actual map.
+   const uint16_t color=rgb(0xA638FF);
+   for(int dy=-11;dy<=11;++dy)for(int dx=-11;dx<=11;++dx){
+    int distance=dx*dx+dy*dy,xx=px+dx,yy=py+dy;
+    if(xx<0||xx>=w||yy<0||yy>=h||distance>121)continue;
+    if(distance<=16)pixel(xx,yy,color);
+    else if(distance<=36)pixel(xx,yy,0xffff);
+    else if(distance>=64){
+     const uint16_t below=mapPixels_[yy*w+xx];
+     auto mix=[&](int shift,int mask){return ((((color>>shift)&mask)*45+((below>>shift)&mask)*55)/100)<<shift;};
+     pixel(xx,yy,uint16_t(mix(11,31)|mix(5,63)|mix(0,31)));
+    }
+   }
+  }else for(int dy=-4;dy<=4;++dy)for(int dx=-4;dx<=4;++dx)if(dx*dx+dy*dy<=16)pixel(px+dx,py+dy,rgb(accent));
   if(own){line(px-6,py,px+6,py,rgb(coast));line(px,py-6,px,py+6,rgb(coast));}
  };
  if(app_.settings.showContacts)for(auto &node:app_.nodes)marker(node.position,false);
