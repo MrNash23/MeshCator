@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <strong>A colorful, hands-on MeshCore experience for the LilyGO T-LoRa Pager.</strong><br>
+  <strong>MeshCore firmware built specifically for the LilyGO T-LoRa Pager.</strong><br>
   Stay in touch, explore your surroundings and keep your mesh close.
 </p>
 
@@ -14,9 +14,11 @@
   <a href="https://github.com/MrNash23/MeshCoder/issues">Share feedback</a>
 </p>
 
+> **Made exclusively for the LilyGO T-LoRa Pager (SX1262).** MeshCator is designed around this device’s display, keyboard, rotary wheel and vibration motor. Other LilyGO boards and other MeshCore devices are not supported.
+
 ## Your conversations, wherever you go
 
-MeshCator turns your pager into a pocket companion for **MeshCore messaging and offline maps**. Send direct messages, join group channels and see contacts with shared locations on the map. Messages travel over the mesh without requiring mobile data or an internet connection, as long as a radio path is available.
+MeshCator turns your LilyGO T-LoRa Pager into a pocket companion for **MeshCore messaging and offline maps**. Send direct messages, join group channels and see contacts with shared locations on the map. Messages travel over the mesh without requiring mobile data or an internet connection, as long as a radio path is available.
 
 Big rounded tiles, clear colors and physical controls keep the experience simple. Choose a look you like, turn the wheel and get going.
 
@@ -66,7 +68,7 @@ A short introduction explains the controls on first start. You can revisit it in
 
 ## Try MeshCator
 
-MeshCator is being developed and tested on the **LilyGO T-LoRa Pager SX1262**. The current version is **0.3.25**, and the project is still under active development.
+MeshCator is developed specifically for the **LilyGO T-LoRa Pager SX1262**. It is not a general-purpose firmware for other boards. The current version is **0.3.25**, and the project is still under active development.
 
 Curious to try it? Start with the [setup and development guide](docs/DEVELOPMENT.md). Installation currently needs some hands-on setup; a universal one-click installer is not available yet. You can also explore the desktop demo before using a pager.
 
