@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+<title id="title">MeshCator — Your mesh. Your connection.</title>
+<desc id="desc">MeshCator logo and a colorful illustration of connected nodes on a dark background.</desc>
+<rect width="1200" height="360" rx="32" fill="#161616"/>
+<rect x="48" y="48" width="76" height="76" rx="22" fill="#f9ef55"/>
+<path d="M65 105V67L86 88 107 67V105" fill="none" stroke="#161616" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<g fill="#161616"><circle cx="65" cy="67" r="5"/><circle cx="107" cy="67" r="5"/><circle cx="65" cy="105" r="5"/><circle cx="107" cy="105" r="5"/></g>
+<circle cx="86" cy="88" r="7" fill="#aa7ed7"/>
+<text x="145" y="101" fill="#f2f0e9" font-family="Arial, Helvetica, sans-serif" font-size="49" font-weight="700">MeshCator</text>
+<text x="48" y="202" fill="#f2f0e9" font-family="Arial, Helvetica, sans-serif" font-size="40" font-weight="700">Your mesh. Your connection.</text>
+<text x="48" y="244" fill="#c6c4bd" font-family="Arial, Helvetica, sans-serif" font-size="22">Messages, maps and people. Right on your pager.</text>
+<rect x="48" y="285" width="148" height="7" rx="3.5" fill="#ffab55"/>
+<rect x="207" y="285" width="77" height="7" rx="3.5" fill="#7ec9c4"/>
+<rect x="295" y="285" width="44" height="7" rx="3.5" fill="#aa7ed7"/>
+<g stroke="#555153" stroke-width="3" fill="none"><path d="M855 95L1039 78 1101 239 910 281 855 95 1101 239M1039 78L910 281"/></g>
+<circle cx="855" cy="95" r="47" fill="#aa7ed7" fill-opacity=".18"/><circle cx="855" cy="95" r="24" fill="#aa7ed7"/>
+<circle cx="1039" cy="78" r="31" fill="#ffab55"/>
+<circle cx="1101" cy="239" r="47" fill="#7ec9c4" fill-opacity=".18"/><circle cx="1101" cy="239" r="24" fill="#7ec9c4"/>
+<circle cx="910" cy="281" r="28" fill="#f9ef55"/>
+<g fill="#161616"><circle cx="855" cy="95" r="6"/><circle cx="1039" cy="78" r="7"/><circle cx="1101" cy="239" r="6"/><circle cx="910" cy="281" r="7"/></g>
+</svg>
