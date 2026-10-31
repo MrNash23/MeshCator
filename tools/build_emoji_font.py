@@ -17,9 +17,9 @@ manifest=json.loads((root/'assets/fonts/noto-emoji/manifest.json').read_text())
 source=root/'assets/fonts/noto-emoji/NotoEmoji.ttf'
 assert hashlib.sha256(source.read_bytes()).hexdigest()==manifest['sha256']
 output=root/'src/ui/fonts/meshcator_emoji_font.c'
-subprocess.run([os.environ.get('FONT_CONVERTER','lv_font_conv'),'--font',str(source),
+subprocess.run([os.environ.get('FONT_CONVERTER','lv_font_conv'),'--font',str(source.relative_to(root)),
  '--size',str(manifest['size']),'--bpp',str(manifest['bpp']),'--format','lvgl',
- '--symbols',manifest['symbols'],'--no-kerning','--lv-font-name','meshcator_emoji_font','-o',str(output)],check=True)
+ '--symbols',manifest['symbols'],'--no-kerning','--lv-font-name','meshcator_emoji_font','-o',str(output.relative_to(root))],check=True,cwd=root)
 s=output.read_text()
 # LVGL does not shape color/ZWJ sequences. Render their supported base symbols,
 # and make selectors, joiners, skin-tone modifiers and flag tags zero-width.
