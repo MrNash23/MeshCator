@@ -1,6 +1,9 @@
 <p align="center">
-  <img src="docs/images/hero.svg" alt="MeshCator — Your mesh. Your connection." width="100%">
+  <img src="docs/images/pager-boot-header.png" alt="LilyGO T-LoRa Pager showing the MeshCator boot screen — edited product photo" width="100%">
 </p>
+
+<h1 align="center">MeshCator</h1>
+<p align="center"><sub>Based on a real pager photo. Boot screen composited with AI-assisted image editing.</sub></p>
 
 <p align="center">
   <strong>MeshCore firmware built specifically for the LilyGO T-LoRa Pager.</strong><br>

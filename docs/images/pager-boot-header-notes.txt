@@ -1,0 +1,9 @@
+Asset: pager-boot-header.png
+Method: built-in image_gen tool, compositing edit.
+Source photo: IMG_6052.heic, supplied by the project owner.
+Screen reference: docs/implementation/splash.png.
+This is an AI-edited product photo, not an unedited photograph of a live boot.
+Original source photo is not included in the repository.
+
+Final generation prompt:
+Use case: compositing. Asset type: wide GitHub README photographic header, landscape 16:9. Input image 1 is the edit target: the user's real black LilyGO T-LoRa Pager on a light tabletop. Input image 2 is the exact MeshCator boot splash to insert. Primary request: create a polished photographic header from this actual device photo, showing the supplied boot splash on its currently black display. Preserve the real device faithfully: same housing, physical perspective, proportions, keyboard layout and all keys, orange keys and fabric tab, left speaker perforations, LilyGO branding and right rotary wheel. Change the screen only by perspective-fitting image 2 exactly inside the physical glass screen area, with realistic brightness and subtle reflections, fully legible exact text 'MeshCator', 'YOUR MESH. YOUR CONNECTION.' and 'STARTING', same yellow/purple logo and little bars as reference. Do not invent a new screen or alter UI. Improve exposure slightly, keep authentic photographic material and soft tabletop shadows. Reframe/outpaint to a balanced wide 16:9 header with the complete pager visible and some breathing room, device large and centered; do not crop keys or rotary wheel. No additional text outside the display, no decorative graphics, no watermark, no invented accessories. This is a photo composite, not a 3D redesign.
